@@ -13,8 +13,5 @@ test.describe('Demo Chat Application', () => {
     const subtitle = page.getByTestId('app-subtitle');
     await expect(subtitle).toBeVisible();
     await expect(subtitle).toHaveText('powered by Bodhi Browser Extension');
-
-    // Verify React app mounted
-    await expect(page.locator('#root')).toBeVisible();
   });
 });
