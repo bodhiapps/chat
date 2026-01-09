@@ -23,7 +23,7 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     env:
-      VITE_BODHI_APP_CLIENT_ID: {{#if devClientId}}{{devClientId}}{{else}}test-client-id{{/if}}
+      VITE_BODHI_APP_CLIENT_ID: test-client-id
       VITE_BODHI_AUTH_SERVER_URL: https://test.example.com
     steps:
       - name: Checkout
