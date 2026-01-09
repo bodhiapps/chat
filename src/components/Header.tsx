@@ -6,8 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
 export default function Header() {
-  const { clientState, isReady, isServerReady, isInitializing, setupState, auth, isAuthenticated, login, logout, showSetup } =
-    useBodhi();
+  const {
+    clientState,
+    isReady,
+    isServerReady,
+    isInitializing,
+    setupState,
+    auth,
+    isAuthenticated,
+    login,
+    logout,
+    showSetup,
+  } = useBodhi();
 
   const handleLogin = async () => {
     const authState = await login();
@@ -46,14 +56,27 @@ export default function Header() {
           </span>
         </div>
 
-        <Button data-testid="btn-settings" onClick={showSetup} variant="ghost" size="icon" title="Settings">
+        <Button
+          data-testid="btn-settings"
+          onClick={showSetup}
+          variant="ghost"
+          size="icon"
+          title="Settings"
+        >
           {isSettingsLoading ? <Spinner /> : <Settings />}
         </Button>
 
-        <section data-testid="section-auth" data-teststate={isAuthenticated ? 'authenticated' : 'unauthenticated'}>
+        <section
+          data-testid="section-auth"
+          data-teststate={isAuthenticated ? 'authenticated' : 'unauthenticated'}
+        >
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
-              <span data-testid="span-auth-name" className="text-sm text-gray-700" title={auth.user?.email}>
+              <span
+                data-testid="span-auth-name"
+                className="text-sm text-gray-700"
+                title={auth.user?.email}
+              >
                 {auth.user?.name || auth.user?.email || 'User'}
               </span>
               <Button data-testid="btn-auth-logout" onClick={logout} variant="ghost">
@@ -61,7 +84,9 @@ export default function Header() {
               </Button>
             </div>
           ) : (
-            <Button data-testid="btn-auth-login" onClick={handleLogin}>Login</Button>
+            <Button data-testid="btn-auth-login" onClick={handleLogin}>
+              Login
+            </Button>
           )}
         </section>
       </div>

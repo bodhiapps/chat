@@ -10,8 +10,7 @@ function AppContent() {
 
   useEffect(() => {
     const shouldAutoOpen =
-      clientState.status === 'direct-not-connected' ||
-      clientState.status === 'extension-not-found';
+      clientState.status === 'direct-not-connected' || clientState.status === 'extension-not-found';
 
     if (shouldAutoOpen && !hasAutoOpenedRef.current) {
       showSetup();

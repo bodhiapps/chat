@@ -199,8 +199,15 @@ function InputArea({
           />
 
           <div className="col-start-2 flex items-center gap-2 justify-end">
-            <Select value={selectedModel} onValueChange={setSelectedModel} disabled={models.length === 0}>
-              <SelectTrigger data-testid="model-selector" className="w-[240px] border-0 focus:ring-0">
+            <Select
+              value={selectedModel}
+              onValueChange={setSelectedModel}
+              disabled={models.length === 0}
+            >
+              <SelectTrigger
+                data-testid="model-selector"
+                className="w-[240px] border-0 focus:ring-0"
+              >
                 <SelectValue placeholder="No models" />
               </SelectTrigger>
               <SelectContent>
