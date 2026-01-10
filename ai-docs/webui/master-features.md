@@ -1,0 +1,208 @@
+# llama.cpp WebUI - Master Features List
+
+> Reverse-engineered from llama.cpp webui for implementation in bodhiapps/chat
+
+## Document Index
+
+- [Libraries & Dependencies](./libraries.md)
+- [API Reference](./api-reference.md)
+- [01. Model Selection](./01-model-selection.md)
+- [02. Chat Interface](./02-chat.md)
+- [03. File Attachments](./03-attachments.md)
+- [04. Tool Calls](./04-tools.md)
+- [05. Keyboard Shortcuts](./05-shortcuts.md)
+- [06. Settings](./06-settings.md)
+- [07. Persistence](./07-persistence.md)
+
+---
+
+## Core Features (Priority Order)
+
+### 1. Model Selection
+**Status**: Core
+**Doc**: [01-model-selection.md](./01-model-selection.md)
+
+- List available models
+- Select model for conversation
+- View model details (context size, modalities, metadata)
+- Capability detection (vision, audio)
+- Auto-loading models on request
+
+### 2. Chat Interface
+**Status**: Core
+**Doc**: [02-chat.md](./02-chat.md)
+
+- Streaming text responses via SSE (see [API Reference](./api-reference.md))
+- Reasoning/thinking blocks (collapsible, auto-collapse on regular content)
+- Message actions (copy, edit, regenerate, delete, continue generation)
+- Abort generation (save partial response)
+- Token statistics display (tokens/sec, processing time, live & final)
+- Auto-scroll with user-scroll detection (10px threshold)
+- Full GitHub Flavored Markdown with syntax highlighting
+- LaTeX/math rendering (KaTeX)
+- Auto-grow textarea (max 10 rows)
+
+### 3. File Attachments
+**Status**: Core
+**Doc**: [03-attachments.md](./03-attachments.md)
+
+- Image attachments (5 formats: JPEG, PNG, GIF, WebP, SVG → auto-convert to PNG)
+- PDF attachments (text extraction OR image conversion for vision models)
+- Audio attachments (MP3, WAV, WebM)
+- Audio recording (microphone button with MediaRecorder)
+- Text file attachments (25+ formats with syntax detection)
+- Drag-and-drop, paste, and button upload
+- Capability validation (see [Model Selection](./01-model-selection.md))
+- File preview with full-size dialog
+
+### 4. Tool Calls
+**Status**: Core
+**Doc**: [04-tools.md](./04-tools.md)
+
+- Display tool_calls in assistant messages
+- Format tool call JSON
+- Show tool results
+
+### 5. Keyboard Shortcuts
+**Status**: Core
+**Doc**: [05-shortcuts.md](./05-shortcuts.md)
+
+- Conversation search (Ctrl/Cmd+K)
+- New chat (Shift+Ctrl/Cmd+O)
+- Focus input
+- Navigation shortcuts
+
+### 6. Settings
+**Status**: Core
+**Doc**: [06-settings.md](./06-settings.md)
+
+- Generation parameters (temperature, dynatemp, top_p, top_k, min_p, penalties)
+- Sampler configuration (order, XTC, typ_p)
+- Max tokens (-1 for infinite)
+- Theme selection (light/dark/system)
+- System message (global prompt)
+- Display options (stats, auto-scroll, markdown rendering)
+- API key (for --api-key mode)
+- Settings persistence (localStorage with auto-save)
+- Server defaults synchronization
+- Import/export settings as JSON
+
+### 7. Persistence
+**Status**: Core
+**Doc**: [07-persistence.md](./07-persistence.md)
+
+- IndexedDB storage (Dexie ORM, database: `LlamacppWebui`)
+- Conversation CRUD operations with transaction safety
+- Message tree structure (parent-child relationships for branching)
+- Import/export conversations as JSON (single or bulk)
+- Message history with full conversation state
+- Cascading delete (conversation → messages)
+- Search conversations (title + full-text)
+
+---
+
+## Additional Core Features
+
+### Conversation Management
+**Related docs**: [Persistence](./07-persistence.md), [Shortcuts](./05-shortcuts.md)
+
+- Auto-generate conversation titles from first message
+- Conversation list in sidebar (sorted by lastModified)
+- Search conversations (full-text message content + title with toggle)
+- Rename conversations (Ctrl/Cmd+Shift+E)
+- Delete conversations with confirmation
+- Conversation deep linking
+
+### Code & Markdown
+**Related docs**: [Chat](./02-chat.md), [Libraries](./libraries.md)
+
+- Full GitHub Flavored Markdown support (remark + rehype pipeline)
+- Syntax highlighting (highlight.js with 25+ languages)
+- LaTeX/math rendering (KaTeX with display/inline modes)
+- HTML preview for code blocks
+- Copy code button per block
+- Incremental rendering with stable block caching
+
+### URL Deep Linking
+- Pre-fill prompt via ?q= parameter
+- Pre-select model via ?model= parameter
+
+### Error Handling
+- Toast notifications for errors
+- Detailed error states
+- Retry mechanisms
+
+### Accessibility
+- Keyboard navigation
+- Focus management
+- Basic screen reader support
+
+### Responsive Design
+- Mobile-friendly interface
+- Desktop optimization
+- Adaptive layouts
+
+---
+
+## Deferred Features
+
+### Voice Input
+**Status**: Deferred
+**Spec**: [03-attachments.md](./03-attachments.md) (Audio Recording section)
+
+Audio recording for speech-to-text via audio-capable models. Infrastructure exists (MediaRecorder API, WAV conversion), but UI integration is experimental.
+
+### Continue Generation
+**Status**: Future/Experimental
+**Spec**: [02-chat.md](./02-chat.md#continue-generation)
+
+Extend assistant responses with continue button. Requires `enableContinueGeneration` setting. Adds special continuation message to context.
+
+### Message Branching
+**Status**: Deferred
+**Spec**: [07-persistence.md](./07-persistence.md#tree-structure)
+
+Conversation tree with branch navigation (edit/regenerate creates branches). Database schema supports full tree structure (parent-child relationships, currNode tracking), but UI for branch navigation not implemented.
+
+---
+
+## Implementation Notes
+
+### Technology Stack
+- **Frontend**: React (replacing Svelte)
+- **State Management**: React hooks (replacing Svelte stores)
+- **UI Components**: shadcn/ui (already in use)
+- **Styling**: Tailwind CSS v4
+- **API Client**: bodhi-js
+- **Persistence**: Dexie (IndexedDB)
+
+### Key Libraries
+See [libraries.md](./libraries.md) for complete mapping of Svelte → React equivalents
+
+### API Compatibility
+See [api-reference.md](./api-reference.md) for bodhi-js API schemas (OpenAI-compatible)
+
+---
+
+## Documentation Completeness
+
+All 10 documentation files have been created with comprehensive functional requirements:
+
+| Document | Status | Key Features Documented |
+|----------|--------|-------------------------|
+| master-features.md | ✅ Complete | Master inventory with cross-references |
+| libraries.md | ✅ Complete | Svelte → React mapping with usage references |
+| api-reference.md | ✅ Complete | Full OpenAI-compatible API schemas |
+| 01-model-selection.md | ✅ Complete | Model listing, auto-loading, capabilities |
+| 02-chat.md | ✅ Complete | Streaming SSE, markdown, reasoning, actions |
+| 03-attachments.md | ✅ Complete | All file types, uploads, capability validation |
+| 04-tools.md | ✅ Complete | Tool call display and formatting |
+| 05-shortcuts.md | ✅ Complete | Keyboard navigation shortcuts |
+| 06-settings.md | ✅ Complete | 44+ parameters, themes, persistence |
+| 07-persistence.md | ✅ Complete | IndexedDB schema, CRUD, import/export |
+
+**Total**: 10 comprehensive functional specification documents ready for React + bodhi-js implementation.
+
+---
+
+_Documentation completed: All phases finished with cross-references and complete feature inventory._
