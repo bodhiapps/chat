@@ -258,6 +258,7 @@ function useChat() {
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isLoadingModelsRef = useRef(false);
+  const hasAttemptedLoadRef = useRef(false);
 
   const loadModels = useCallback(async () => {
     if (isLoadingModelsRef.current) return;
@@ -283,9 +284,12 @@ function useChat() {
       }
 
       setModels(modelIds);
-      if (modelIds.length > 0 && !selectedModel) {
-        setSelectedModel(modelIds[0]);
-      }
+      setSelectedModel(current => {
+        if (modelIds.length > 0 && !current) {
+          return modelIds[0];
+        }
+        return current;
+      });
     } catch (err) {
       console.error('Failed to fetch models:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch models';
@@ -294,13 +298,14 @@ function useChat() {
       setIsLoadingModels(false);
       isLoadingModelsRef.current = false;
     }
-  }, [client, selectedModel, isAuthenticated]);
+  }, [client, isAuthenticated]);
 
   useEffect(() => {
-    if (isReady && isAuthenticated && models.length === 0 && !isLoadingModels) {
+    if (isReady && isAuthenticated && !hasAttemptedLoadRef.current && !isLoadingModels) {
+      hasAttemptedLoadRef.current = true;
       loadModels();
     }
-  }, [isReady, isAuthenticated, models.length, isLoadingModels, loadModels]);
+  }, [isReady, isAuthenticated, isLoadingModels, loadModels]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -310,6 +315,7 @@ function useChat() {
       setSelectedModel('');
       setModels([]);
       setError(null);
+      hasAttemptedLoadRef.current = false;
     }
   }, [isAuthenticated]);
 

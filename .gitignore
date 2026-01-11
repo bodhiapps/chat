@@ -16,6 +16,10 @@ dist-ssr
 
 # Environment variables
 .env
+e2e/.env.test
+
+# Test models directory
+test_hf_home/
 
 # Playwright
 /test-results/
