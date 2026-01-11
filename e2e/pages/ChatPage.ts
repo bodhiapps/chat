@@ -30,13 +30,13 @@ export class ChatPage {
 
   async clickLoginAndWaitForRedirect(): Promise<void> {
     await this.page.locator(this.selectors.loginButton).click();
-    await this.page.waitForURL(/.*/, { timeout: 10000 });
+    await this.page.waitForURL(/.*/);
   }
 
   async waitForAuthenticated(): Promise<void> {
     await this.page
       .locator(`${this.selectors.authSection}[data-teststate="authenticated"]`)
-      .waitFor({ timeout: 60000 });
+      .waitFor();
   }
 
   async waitForUnauthenticated(): Promise<void> {
@@ -46,12 +46,12 @@ export class ChatPage {
   }
 
   async fillKeycloakLogin(username: string, password: string): Promise<void> {
-    await this.page.waitForSelector('#username', { timeout: 30000 });
+    await this.page.waitForSelector('#username');
     await this.page.fill('#username', username);
     await this.page.fill('#password', password);
     await this.page.click('#kc-login');
 
-    await this.page.waitForURL(/.*\/chat\//, { timeout: 60000 });
+    await this.page.waitForURL(/.*\/chat\//);
   }
 
   async selectModel(modelName: string): Promise<void> {
@@ -61,13 +61,10 @@ export class ChatPage {
 
   async waitForModelsLoaded(): Promise<void> {
     await this.page.locator(this.selectors.refreshModelsBtn).waitFor({ state: 'visible' });
-    await this.page.waitForFunction(
-      () => {
-        const selector = document.querySelector('[data-testid="model-selector"]');
-        return selector && !selector.textContent?.includes('No models');
-      },
-      { timeout: 60000 }
-    );
+    await this.page.waitForFunction(() => {
+      const selector = document.querySelector('[data-testid="model-selector"]');
+      return selector && !selector.textContent?.includes('No models');
+    });
   }
 
   async sendMessage(message: string): Promise<void> {
