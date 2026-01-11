@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { BodhiProvider, useBodhi, BodhiBadge } from '@bodhiapp/bodhi-js-react';
 import { Toaster } from '@/components/ui/sonner';
 import { AUTH_CLIENT_ID, AUTH_SERVER_URL } from './env';
+import { ChatProvider } from './context/ChatContext';
 import Layout from './components/Layout';
 
 function AppContent() {
@@ -19,10 +20,10 @@ function AppContent() {
   }, [clientState.status, showSetup]);
 
   return (
-    <>
+    <ChatProvider>
       <Layout />
       <Toaster />
-    </>
+    </ChatProvider>
   );
 }
 
