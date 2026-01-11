@@ -26,7 +26,7 @@ jobs:
       CI: true
       INTEG_TEST_AUTH_URL: https://main-id.getbodhi.app
       INTEG_TEST_AUTH_REALM: bodhi
-      INTEG_TEST_CLIENT_ID: resource-ff72ac9a-6c93-4777-902c-dc9f6f9db677
+      INTEG_TEST_CLIENT_ID: resource-17e8a0e7-89c4-415d-832d-446b3be6fe77
       INTEG_TEST_CLIENT_SECRET: ${{ secrets.INTEG_TEST_CLIENT_SECRET }}
       INTEG_TEST_USERNAME: ${{ secrets.INTEG_TEST_USERNAME }}
       INTEG_TEST_PASSWORD: ${{ secrets.INTEG_TEST_PASSWORD }}
