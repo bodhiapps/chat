@@ -116,5 +116,29 @@ test.describe('Core Chat Flow - Direct Mode', () => {
     const userMessagesInSecondConv = await page.locator('[data-testid="message-user"]').all();
     const firstUserMessageInSecondConv = userMessagesInSecondConv[0];
     await expect(firstUserMessageInSecondConv).toContainText(testMessage2);
+
+    const conversationCountBeforeDelete = await chatPage.getConversationCount();
+    expect(conversationCountBeforeDelete).toBe(2);
+
+    await chatPage.deleteConversationByIndex(0);
+
+    await page.waitForTimeout(500);
+
+    const conversationCountAfterDelete = await chatPage.getConversationCount();
+    expect(conversationCountAfterDelete).toBe(1);
+
+    const messageCountAfterDelete = await chatPage.getMessageCount();
+    expect(messageCountAfterDelete).toBe(0);
+
+    await page.reload();
+    await chatPage.waitForPageLoad();
+    await chatPage.waitForAuthenticated();
+
+    const conversationCountAfterRefresh2 = await chatPage.getConversationCount();
+    expect(conversationCountAfterRefresh2).toBe(1);
+
+    const remainingTitles = await chatPage.getConversationTitles();
+    expect(remainingTitles[0]).toContain('Answer in max 4 words: What day comes after Monday?');
+    expect(remainingTitles.length).toBe(1);
   });
 });
