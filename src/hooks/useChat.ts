@@ -154,6 +154,7 @@ export function useChat() {
 
   return {
     messages,
+    setMessages,
     isStreaming,
     selectedModel,
     setSelectedModel,

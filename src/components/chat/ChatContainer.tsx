@@ -1,9 +1,10 @@
-import { ChatProvider, useChatContext } from '@/context/ChatContext';
+import { useChatContext } from '@/context/ChatContext';
 import { MessageList } from './MessageList';
 import { InputArea } from './InputArea';
 
-function ChatContent() {
-  const { messages, isStreaming, error, isLoadingConversation } = useChatContext();
+export function ChatContainer() {
+  const { messages, isStreaming, error, isLoadingConversation, currentConversationId } =
+    useChatContext();
 
   return (
     <div
@@ -11,16 +12,13 @@ function ChatContent() {
       data-testid="chat-container"
       data-teststate={isLoadingConversation ? 'loading-conversation' : 'ready'}
     >
-      <MessageList messages={messages} isStreaming={isStreaming} error={error} />
+      <MessageList
+        messages={messages}
+        isStreaming={isStreaming}
+        error={error}
+        currentConversationId={currentConversationId}
+      />
       <InputArea />
     </div>
-  );
-}
-
-export function ChatContainer() {
-  return (
-    <ChatProvider>
-      <ChatContent />
-    </ChatProvider>
   );
 }

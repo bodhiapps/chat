@@ -31,6 +31,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const persistence = usePersistence();
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
+  const [prevStreamingState, setPrevStreamingState] = useState(false);
 
   useEffect(() => {
     if (chat.error) {
@@ -41,49 +42,64 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [chat.error, chat.clearError]);
 
+  const loadConversation = useCallback(
+    async (id: string) => {
+      setIsLoadingConversation(true);
+      const messages = await persistence.loadMessages(id);
+      chat.setMessages(messages);
+      setCurrentConversationId(id);
+      setIsLoadingConversation(false);
+    },
+    [persistence, chat]
+  );
+
+  useEffect(() => {
+    const loadLatestConversation = async () => {
+      const conversations = await persistence.listConversations();
+      if (conversations.length > 0 && !currentConversationId) {
+        const latest = conversations[0];
+        await loadConversation(latest.id);
+      }
+    };
+    loadLatestConversation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (prevStreamingState && !chat.isStreaming && currentConversationId) {
+      const lastMessage = chat.messages[chat.messages.length - 1];
+      if (lastMessage?.role === 'assistant') {
+        persistence.saveMessage(currentConversationId, lastMessage, chat.selectedModel);
+      }
+    }
+    setPrevStreamingState(chat.isStreaming);
+  }, [
+    chat.isStreaming,
+    chat.messages,
+    chat.selectedModel,
+    currentConversationId,
+    persistence,
+    prevStreamingState,
+  ]);
+
   const handleSendMessage = useCallback(
     async (prompt: string) => {
-      await chat.sendMessage(prompt);
-
       if (!currentConversationId && prompt.trim()) {
         const title = persistence.generateConversationTitle(prompt);
         const newId = await persistence.createConversation(title);
         setCurrentConversationId(newId);
-
         await persistence.saveMessage(newId, { role: 'user', content: prompt }, chat.selectedModel);
-
-        const lastMessage = chat.messages[chat.messages.length - 1];
-        if (lastMessage?.role === 'assistant') {
-          await persistence.saveMessage(newId, lastMessage, chat.selectedModel);
-        }
       } else if (currentConversationId) {
         await persistence.saveMessage(
           currentConversationId,
           { role: 'user', content: prompt },
           chat.selectedModel
         );
-
-        const lastMessage = chat.messages[chat.messages.length - 1];
-        if (lastMessage?.role === 'assistant') {
-          await persistence.saveMessage(currentConversationId, lastMessage, chat.selectedModel);
-        }
       }
+
+      await chat.sendMessage(prompt);
     },
     [chat, currentConversationId, persistence]
-  );
-
-  const loadConversation = useCallback(
-    async (id: string) => {
-      setIsLoadingConversation(true);
-      const messages = await persistence.loadMessages(id);
-      chat.clearMessages();
-      messages.forEach(msg => {
-        chat.messages.push(msg);
-      });
-      setCurrentConversationId(id);
-      setIsLoadingConversation(false);
-    },
-    [persistence, chat]
   );
 
   const startNewConversation = useCallback(() => {

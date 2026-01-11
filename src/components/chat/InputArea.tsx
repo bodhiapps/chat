@@ -48,7 +48,11 @@ export function InputArea() {
   return (
     <div className="w-full px-4 py-4">
       <div className="max-w-4xl mx-auto">
-        <div className="grid grid-cols-[auto_1fr_auto] grid-rows-[1fr_auto] gap-2 p-3 bg-white border border-gray-200 rounded-3xl shadow-sm">
+        <div
+          className="grid grid-cols-[auto_1fr_auto] grid-rows-[1fr_auto] gap-2 p-3 bg-white border border-gray-200 rounded-3xl shadow-sm"
+          data-testid="input-area"
+          data-teststate={isDisabled ? 'disabled' : 'ready'}
+        >
           <Button
             onClick={handleNewChat}
             variant="ghost"
@@ -78,6 +82,9 @@ export function InputArea() {
             >
               <SelectTrigger
                 data-testid="model-selector"
+                data-teststate={
+                  isLoadingModels ? 'loading' : models.length === 0 ? 'no-models' : 'ready'
+                }
                 className="w-[240px] border-0 focus:ring-0"
               >
                 <SelectValue placeholder="No models" />

@@ -7,9 +7,15 @@ interface MessageListProps {
   messages: ChatMessage[];
   isStreaming: boolean;
   error?: string | null;
+  currentConversationId?: string | null;
 }
 
-export function MessageList({ messages, isStreaming, error }: MessageListProps) {
+export function MessageList({
+  messages,
+  isStreaming,
+  error,
+  currentConversationId,
+}: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const isUserScrolledUpRef = useRef(false);
@@ -54,6 +60,8 @@ export function MessageList({ messages, isStreaming, error }: MessageListProps) 
       className="flex-1 overflow-hidden"
       data-testid="chat-area"
       data-teststate={error ? 'error' : isStreaming ? 'streaming' : 'idle'}
+      data-test-chat-id={currentConversationId || ''}
+      data-test-message-count={messages.length}
       ref={(node: HTMLDivElement | null) => {
         if (node) {
           const viewport = node.querySelector(
@@ -72,7 +80,7 @@ export function MessageList({ messages, isStreaming, error }: MessageListProps) 
           ) : (
             <>
               {messages.map((msg, index) => (
-                <MessageBubble key={index} message={msg} />
+                <MessageBubble key={index} message={msg} index={index} />
               ))}
               {isStreaming && (
                 <div data-testid="streaming-indicator" className="flex justify-start mb-4">

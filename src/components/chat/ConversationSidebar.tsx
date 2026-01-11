@@ -23,17 +23,19 @@ export function ConversationSidebar({
   onNewConversation,
 }: ConversationSidebarProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { listConversations, deleteConversation } = usePersistence();
 
   const loadConversations = useCallback(async () => {
+    setIsLoading(true);
     const convs = await listConversations();
     setConversations(convs);
+    setIsLoading(false);
   }, [listConversations]);
 
   useEffect(() => {
     loadConversations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadConversations, currentConversationId]);
 
   const handleDelete = async (id: string) => {
     await deleteConversation(id);
@@ -59,7 +61,12 @@ export function ConversationSidebar({
   }
 
   return (
-    <div className="w-64 border-r bg-white flex flex-col" data-testid="conversation-sidebar">
+    <div
+      className="w-64 border-r bg-white flex flex-col"
+      data-testid="conversation-sidebar"
+      data-teststate={isLoading ? 'loading' : 'ready'}
+      data-test-conversation-count={conversations.length}
+    >
       <div className="p-3 border-b space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-sm">Conversations</h2>
