@@ -21,6 +21,8 @@ export function ConversationItem({
       }`}
       onClick={onClick}
       data-testid="conversation-item"
+      data-teststate={isActive ? 'active' : 'inactive'}
+      data-conversation-id={conversation.id}
     >
       <MessageSquare size={16} className="flex-shrink-0 text-gray-600" />
       <span className="flex-1 text-sm truncate">{conversation.name}</span>

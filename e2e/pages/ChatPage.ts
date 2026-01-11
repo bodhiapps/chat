@@ -124,6 +124,13 @@ export class ChatPage {
 
   async clickConversationByIndex(index: number): Promise<void> {
     await this.page.locator(this.selectors.conversationItem).nth(index).click();
+    await this.waitForConversationLoaded();
+  }
+
+  async waitForConversationLoaded(): Promise<void> {
+    await this.page
+      .locator('[data-testid="chat-container"][data-teststate="ready"]')
+      .waitFor({ state: 'visible' });
   }
 
   async deleteConversationByIndex(index: number): Promise<void> {

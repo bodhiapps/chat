@@ -21,6 +21,7 @@ interface ChatContextValue {
   currentConversationId: string | null;
   loadConversation: (id: string) => Promise<void>;
   startNewConversation: () => void;
+  isLoadingConversation: boolean;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -29,6 +30,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const chat = useChat();
   const persistence = usePersistence();
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
 
   useEffect(() => {
     if (chat.error) {
@@ -72,12 +74,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const loadConversation = useCallback(
     async (id: string) => {
+      setIsLoadingConversation(true);
       const messages = await persistence.loadMessages(id);
       chat.clearMessages();
       messages.forEach(msg => {
         chat.messages.push(msg);
       });
       setCurrentConversationId(id);
+      setIsLoadingConversation(false);
     },
     [persistence, chat]
   );
@@ -93,6 +97,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     currentConversationId,
     loadConversation,
     startNewConversation,
+    isLoadingConversation,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

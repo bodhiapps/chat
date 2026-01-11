@@ -97,8 +97,6 @@ test.describe('Core Chat Flow - Direct Mode', () => {
 
     await chatPage.clickConversationByIndex(1);
 
-    await page.waitForTimeout(500);
-
     const messagesInFirstConv = await chatPage.getMessageCount();
     expect(messagesInFirstConv).toBe(2);
 
@@ -107,8 +105,6 @@ test.describe('Core Chat Flow - Direct Mode', () => {
     await expect(firstUserMessageInFirstConv).toContainText(testMessage);
 
     await chatPage.clickConversationByIndex(0);
-
-    await page.waitForTimeout(500);
 
     const messagesInSecondConv = await chatPage.getMessageCount();
     expect(messagesInSecondConv).toBe(2);
@@ -121,8 +117,6 @@ test.describe('Core Chat Flow - Direct Mode', () => {
     expect(conversationCountBeforeDelete).toBe(2);
 
     await chatPage.deleteConversationByIndex(0);
-
-    await page.waitForTimeout(500);
 
     const conversationCountAfterDelete = await chatPage.getConversationCount();
     expect(conversationCountAfterDelete).toBe(1);
