@@ -14,10 +14,17 @@ export class ChatPage {
     refreshModelsBtn: '[data-testid="btn-refresh-models"]',
     chatInput: '[data-testid="chat-input"]',
     sendButton: '[data-testid="send-button"]',
+    newChatButton: '[data-testid="btn-new-chat"]',
     userMessage: '[data-testid="message-user"]',
     assistantMessage: '[data-testid="message-assistant"]',
     streamingIndicator: '[data-testid="streaming-indicator"]',
     chatArea: '[data-testid="chat-area"]',
+    conversationSidebar: '[data-testid="conversation-sidebar"]',
+    newConversationButton: '[data-testid="btn-new-conversation"]',
+    showSidebarButton: '[data-testid="btn-show-sidebar"]',
+    hideSidebarButton: '[data-testid="btn-hide-sidebar"]',
+    conversationItem: '[data-testid="conversation-item"]',
+    deleteConversationButton: '[data-testid="btn-delete-conversation"]',
   };
 
   async waitForPageLoad(): Promise<void> {
@@ -79,5 +86,55 @@ export class ChatPage {
     const messages = await this.page.locator(this.selectors.assistantMessage).all();
     const lastMessage = messages[messages.length - 1];
     return (await lastMessage.textContent()) || '';
+  }
+
+  async clickNewChat(): Promise<void> {
+    await this.page.locator(this.selectors.newChatButton).click();
+  }
+
+  async isSidebarVisible(): Promise<boolean> {
+    return await this.page.locator(this.selectors.conversationSidebar).isVisible();
+  }
+
+  async clickShowSidebar(): Promise<void> {
+    await this.page.locator(this.selectors.showSidebarButton).click();
+  }
+
+  async clickHideSidebar(): Promise<void> {
+    await this.page.locator(this.selectors.hideSidebarButton).click();
+  }
+
+  async clickNewConversation(): Promise<void> {
+    await this.page.locator(this.selectors.newConversationButton).click();
+  }
+
+  async getConversationCount(): Promise<number> {
+    return await this.page.locator(this.selectors.conversationItem).count();
+  }
+
+  async getConversationTitles(): Promise<string[]> {
+    const items = await this.page.locator(this.selectors.conversationItem).all();
+    const titles: string[] = [];
+    for (const item of items) {
+      const text = await item.textContent();
+      titles.push(text?.trim() || '');
+    }
+    return titles;
+  }
+
+  async clickConversationByIndex(index: number): Promise<void> {
+    await this.page.locator(this.selectors.conversationItem).nth(index).click();
+  }
+
+  async deleteConversationByIndex(index: number): Promise<void> {
+    const item = this.page.locator(this.selectors.conversationItem).nth(index);
+    await item.hover();
+    await item.locator(this.selectors.deleteConversationButton).click();
+  }
+
+  async getMessageCount(): Promise<number> {
+    const userCount = await this.page.locator(this.selectors.userMessage).count();
+    const assistantCount = await this.page.locator(this.selectors.assistantMessage).count();
+    return userCount + assistantCount;
   }
 }

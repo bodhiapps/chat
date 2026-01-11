@@ -52,5 +52,69 @@ test.describe('Core Chat Flow - Direct Mode', () => {
 
     const chatArea = page.locator('[data-testid="chat-area"]');
     await expect(chatArea).not.toHaveAttribute('data-teststate', 'error');
+
+    const messageCountBeforeRefresh = await chatPage.getMessageCount();
+    expect(messageCountBeforeRefresh).toBe(2);
+
+    await page.reload();
+    await chatPage.waitForPageLoad();
+    await chatPage.waitForAuthenticated();
+
+    const messageCountAfterRefresh = await chatPage.getMessageCount();
+    expect(messageCountAfterRefresh).toBe(messageCountBeforeRefresh);
+
+    const userMessagesAfterRefresh = await page.locator('[data-testid="message-user"]').all();
+    const lastUserMessageAfterRefresh =
+      userMessagesAfterRefresh[userMessagesAfterRefresh.length - 1];
+    await expect(lastUserMessageAfterRefresh).toContainText(testMessage);
+
+    const assistantMessagesAfterRefresh = await page
+      .locator('[data-testid="message-assistant"]')
+      .all();
+    const lastAssistantMessageAfterRefresh =
+      assistantMessagesAfterRefresh[assistantMessagesAfterRefresh.length - 1];
+    const responseAfterRefresh = (await lastAssistantMessageAfterRefresh.textContent()) || '';
+    expect(responseAfterRefresh.toLowerCase()).toContain('tuesday');
+
+    const isSidebarVisible = await chatPage.isSidebarVisible();
+    expect(isSidebarVisible).toBe(true);
+
+    const conversationCountBefore = await chatPage.getConversationCount();
+    expect(conversationCountBefore).toBeGreaterThan(0);
+
+    await chatPage.clickNewConversation();
+
+    const messageCountAfterNew = await chatPage.getMessageCount();
+    expect(messageCountAfterNew).toBe(0);
+
+    const testMessage2 = 'Answer in 1 word: What is 2+2?';
+    await chatPage.sendMessage(testMessage2);
+    const response2 = await chatPage.waitForResponse();
+    expect(response2).toContain('4');
+
+    const conversationCountAfter = await chatPage.getConversationCount();
+    expect(conversationCountAfter).toBe(conversationCountBefore + 1);
+
+    await chatPage.clickConversationByIndex(1);
+
+    await page.waitForTimeout(500);
+
+    const messagesInFirstConv = await chatPage.getMessageCount();
+    expect(messagesInFirstConv).toBe(2);
+
+    const userMessagesInFirstConv = await page.locator('[data-testid="message-user"]').all();
+    const firstUserMessageInFirstConv = userMessagesInFirstConv[0];
+    await expect(firstUserMessageInFirstConv).toContainText(testMessage);
+
+    await chatPage.clickConversationByIndex(0);
+
+    await page.waitForTimeout(500);
+
+    const messagesInSecondConv = await chatPage.getMessageCount();
+    expect(messagesInSecondConv).toBe(2);
+
+    const userMessagesInSecondConv = await page.locator('[data-testid="message-user"]').all();
+    const firstUserMessageInSecondConv = userMessagesInSecondConv[0];
+    await expect(firstUserMessageInSecondConv).toContainText(testMessage2);
   });
 });
