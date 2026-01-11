@@ -184,7 +184,7 @@ export class BodhiServerManager {
         // Server not ready yet
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     throw new Error(`Bodhi server failed to start within ${timeout}ms`);
