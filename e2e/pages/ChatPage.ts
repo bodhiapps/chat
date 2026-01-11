@@ -201,7 +201,9 @@ export class ChatPage {
     await item.hover();
     await item.locator(this.selectors.deleteConversationButton).click();
     await this.page
-      .locator(`[data-testid="conversation-sidebar"][data-test-conversation-count="${countBefore - 1}"]`)
+      .locator(
+        `[data-testid="conversation-sidebar"][data-test-conversation-count="${countBefore - 1}"]`
+      )
       .waitFor();
   }
 

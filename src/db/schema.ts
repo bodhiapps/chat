@@ -1,7 +1,9 @@
 export interface Conversation {
   id: string;
+  userId: string;
   name: string;
   lastModified: number;
+  pinned: boolean;
 }
 
 export interface MessageExtra {

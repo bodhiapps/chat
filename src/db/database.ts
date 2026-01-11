@@ -11,4 +11,29 @@ db.version(1).stores({
   messages: 'id, convId, createdAt',
 });
 
+db.version(2)
+  .stores({
+    conversations: 'id, lastModified, pinned',
+    messages: 'id, convId, createdAt',
+  })
+  .upgrade(tx => {
+    return tx
+      .table('conversations')
+      .toCollection()
+      .modify(conv => {
+        conv.pinned = false;
+      });
+  });
+
+db.version(3)
+  .stores({
+    conversations: 'id, userId, lastModified, pinned, [userId+lastModified]',
+    messages: 'id, convId, createdAt',
+  })
+  .upgrade(async tx => {
+    // Clean slate: delete all existing data
+    await tx.table('messages').clear();
+    await tx.table('conversations').clear();
+  });
+
 export { db };

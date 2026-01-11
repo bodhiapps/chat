@@ -35,7 +35,7 @@ export default function Header() {
           Demo Chat
         </h1>
         <span className="text-sm text-gray-500" data-testid="app-subtitle">
-          powered by Bodhi Browser Extension
+          powered by Bodhi Platform
         </span>
       </div>
 

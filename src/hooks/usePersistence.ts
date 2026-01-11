@@ -3,18 +3,52 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/db/database';
 import type { Conversation, Message } from '@/db/schema';
 import type { ChatMessage } from './useChat';
+import { QuotaCleanupError } from '@/types/errors';
 
-export function usePersistence() {
-  const createConversation = useCallback(async (name: string): Promise<string> => {
-    const id = uuidv4();
-    const conversation: Conversation = {
-      id,
-      name,
-      lastModified: Date.now(),
-    };
-    await db.conversations.add(conversation);
-    return id;
-  }, []);
+export function usePersistence(userId: string | null) {
+  const cleanupOldestConversations = useCallback(
+    async (count: number = 3): Promise<string[]> => {
+      if (!userId) return [];
+
+      const conversations = await db.conversations
+        .where('userId')
+        .equals(userId)
+        .filter(conv => !conv.pinned)
+        .sortBy('lastModified');
+
+      const toDelete = conversations.slice(0, count);
+      const deletedIds: string[] = [];
+
+      for (const conv of toDelete) {
+        await db.transaction('rw', db.conversations, db.messages, async () => {
+          await db.messages.where('convId').equals(conv.id).delete();
+          await db.conversations.delete(conv.id);
+        });
+        deletedIds.push(conv.id);
+      }
+
+      return deletedIds;
+    },
+    [userId]
+  );
+
+  const createConversation = useCallback(
+    async (name: string): Promise<string> => {
+      if (!userId) throw new Error('User not authenticated');
+
+      const id = uuidv4();
+      const conversation: Conversation = {
+        id,
+        userId,
+        name,
+        lastModified: Date.now(),
+        pinned: false,
+      };
+      await db.conversations.add(conversation);
+      return id;
+    },
+    [userId]
+  );
 
   const deleteConversation = useCallback(async (id: string): Promise<void> => {
     await db.transaction('rw', db.conversations, db.messages, async () => {
@@ -30,13 +64,43 @@ export function usePersistence() {
     });
   }, []);
 
-  const loadConversation = useCallback(async (id: string): Promise<Conversation | undefined> => {
-    return await db.conversations.get(id);
+  const togglePin = useCallback(async (id: string): Promise<boolean> => {
+    const conv = await db.conversations.get(id);
+    if (!conv) return false;
+
+    const newPinned = !conv.pinned;
+    await db.conversations.update(id, { pinned: newPinned });
+    return newPinned;
   }, []);
 
+  const loadConversation = useCallback(
+    async (id: string): Promise<Conversation | undefined> => {
+      if (!userId) return undefined;
+
+      const conv = await db.conversations.get(id);
+      // Verify conversation belongs to current user
+      if (conv && conv.userId !== userId) {
+        return undefined;
+      }
+      return conv;
+    },
+    [userId]
+  );
+
   const listConversations = useCallback(async (): Promise<Conversation[]> => {
-    return await db.conversations.orderBy('lastModified').reverse().toArray();
-  }, []);
+    if (!userId) return [];
+
+    const all = await db.conversations
+      .where('userId')
+      .equals(userId)
+      .reverse()
+      .sortBy('lastModified');
+    return all.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return b.lastModified - a.lastModified;
+    });
+  }, [userId]);
 
   const saveMessage = useCallback(
     async (convId: string, message: ChatMessage, model?: string): Promise<void> => {
@@ -48,10 +112,21 @@ export function usePersistence() {
         model,
         createdAt: Date.now(),
       };
-      await db.messages.add(dbMessage);
-      await db.conversations.update(convId, { lastModified: Date.now() });
+
+      try {
+        await db.messages.add(dbMessage);
+        await db.conversations.update(convId, { lastModified: Date.now() });
+      } catch (error) {
+        if (error instanceof Error && error.name === 'QuotaExceededError') {
+          await cleanupOldestConversations(3);
+          await db.messages.add(dbMessage);
+          await db.conversations.update(convId, { lastModified: Date.now() });
+          throw new QuotaCleanupError('Cleaned up old conversations to free space');
+        }
+        throw error;
+      }
     },
-    []
+    [cleanupOldestConversations]
   );
 
   const loadMessages = useCallback(async (convId: string): Promise<ChatMessage[]> => {
@@ -59,6 +134,7 @@ export function usePersistence() {
     return messages
       .filter(msg => msg.role === 'user' || msg.role === 'assistant')
       .map(msg => ({
+        id: msg.id,
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
       }));
@@ -77,6 +153,7 @@ export function usePersistence() {
     createConversation,
     deleteConversation,
     renameConversation,
+    togglePin,
     loadConversation,
     listConversations,
     saveMessage,

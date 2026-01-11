@@ -2,8 +2,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBodhi } from '@bodhiapp/bodhi-js-react';
 
 export interface ChatMessage {
+  id?: string;
   role: 'user' | 'assistant';
   content: string;
+  error?: {
+    message: string;
+    retryable: boolean;
+  };
 }
 
 export function useChat() {
@@ -77,59 +82,96 @@ export function useChat() {
     }
   }, [isAuthenticated]);
 
-  const sendMessage = async (prompt: string) => {
-    if (!selectedModel) {
-      setError('Please select a model first');
-      return;
-    }
-
-    setError(null);
-    setIsStreaming(true);
-
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    const conversationMessages: ChatMessage[] = [...messages, { role: 'user', content: prompt }];
-
-    setMessages(prev => [...prev, { role: 'user', content: prompt }]);
-    setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-    try {
-      const stream = client.chat.completions.create({
-        model: selectedModel,
-        messages: conversationMessages,
-        stream: true,
-      });
-
-      for await (const chunk of stream) {
-        if (abortController.signal.aborted) {
-          break;
-        }
-        const content = chunk.choices?.[0]?.delta?.content || '';
-        if (content) {
-          setMessages(prev => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            updated[lastIndex] = {
-              ...updated[lastIndex],
-              content: updated[lastIndex].content + content,
-            };
-            return updated;
-          });
-        }
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
+  const sendMessage = useCallback(
+    async (prompt: string) => {
+      if (!selectedModel) {
+        setError('Please select a model first');
         return;
       }
-      console.error('Failed to send message:', err);
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+
+      setError(null);
+      setIsStreaming(true);
+
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
+      const conversationMessages: ChatMessage[] = [...messages, { role: 'user', content: prompt }];
+
+      setMessages(prev => [...prev, { role: 'user', content: prompt }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      try {
+        const stream = client.chat.completions.create({
+          model: selectedModel,
+          messages: conversationMessages,
+          stream: true,
+        });
+
+        for await (const chunk of stream) {
+          if (abortController.signal.aborted) {
+            break;
+          }
+          const content = chunk.choices?.[0]?.delta?.content || '';
+          if (content) {
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: updated[lastIndex].content + content,
+              };
+              return updated;
+            });
+          }
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+        console.error('Failed to send message:', err);
+
+        const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+        const isAuthError =
+          errorMessage.includes('401') ||
+          errorMessage.includes('unauthorized') ||
+          errorMessage.includes('token');
+
+        if (isAuthError) {
+          setError('Session expired. Please log in again.');
+          setMessages(prev => prev.slice(0, -1));
+          return;
+        }
+
+        setError(errorMessage);
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (updated[lastIndex]?.role === 'assistant') {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              error: { message: errorMessage, retryable: true },
+            };
+          }
+          return updated;
+        });
+      } finally {
+        setIsStreaming(false);
+        abortControllerRef.current = null;
+      }
+    },
+    [client, selectedModel, messages]
+  );
+
+  const retryMessage = useCallback(
+    async (messageIndex: number) => {
+      const userMessageIndex = messageIndex - 1;
+      if (userMessageIndex < 0 || messages[userMessageIndex]?.role !== 'user') return;
+
       setMessages(prev => prev.slice(0, -1));
-    } finally {
-      setIsStreaming(false);
-      abortControllerRef.current = null;
-    }
-  };
+      await sendMessage(messages[userMessageIndex].content);
+    },
+    [messages, sendMessage]
+  );
 
   const clearMessages = () => {
     setMessages([]);
@@ -159,6 +201,7 @@ export function useChat() {
     selectedModel,
     setSelectedModel,
     sendMessage,
+    retryMessage,
     clearMessages,
     regenerateLastMessage,
     error,

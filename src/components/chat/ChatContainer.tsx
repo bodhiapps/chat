@@ -3,8 +3,14 @@ import { MessageList } from './MessageList';
 import { InputArea } from './InputArea';
 
 export function ChatContainer() {
-  const { messages, isStreaming, error, isLoadingConversation, currentConversationId } =
-    useChatContext();
+  const {
+    messages,
+    isStreaming,
+    error,
+    isLoadingConversation,
+    currentConversationId,
+    retryMessage,
+  } = useChatContext();
 
   return (
     <div
@@ -17,6 +23,7 @@ export function ChatContainer() {
         isStreaming={isStreaming}
         error={error}
         currentConversationId={currentConversationId}
+        onRetryMessage={retryMessage}
       />
       <InputArea />
     </div>

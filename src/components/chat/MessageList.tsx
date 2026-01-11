@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useChatContext } from '@/context/ChatContext';
 import type { ChatMessage } from '@/hooks/useChat';
 import { MessageBubble } from './MessageBubble';
 
@@ -8,6 +9,7 @@ interface MessageListProps {
   isStreaming: boolean;
   error?: string | null;
   currentConversationId?: string | null;
+  onRetryMessage?: (index: number) => void;
 }
 
 export function MessageList({
@@ -15,7 +17,9 @@ export function MessageList({
   isStreaming,
   error,
   currentConversationId,
+  onRetryMessage,
 }: MessageListProps) {
+  const { highlightedMessageId } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const isUserScrolledUpRef = useRef(false);
@@ -55,6 +59,13 @@ export function MessageList({
     }
   }, [messages, isStreaming]);
 
+  useEffect(() => {
+    if (highlightedMessageId) {
+      const element = document.querySelector(`[data-message-id="${highlightedMessageId}"]`);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightedMessageId]);
+
   return (
     <ScrollArea
       className="flex-1 overflow-hidden"
@@ -80,7 +91,14 @@ export function MessageList({
           ) : (
             <>
               {messages.map((msg, index) => (
-                <MessageBubble key={index} message={msg} index={index} />
+                <MessageBubble
+                  key={index}
+                  message={msg}
+                  index={index}
+                  messageId={msg.id}
+                  isHighlighted={msg.id === highlightedMessageId}
+                  onRetry={onRetryMessage ? () => onRetryMessage(index) : undefined}
+                />
               ))}
               {isStreaming && (
                 <div data-testid="streaming-indicator" className="flex justify-start mb-4">
