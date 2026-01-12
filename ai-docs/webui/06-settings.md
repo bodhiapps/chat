@@ -1,6 +1,6 @@
 # Feature: Settings
 
-> Priority: 6 | Status: Core Feature
+> Priority: 6 | Status: Core Feature | **Implementation: ❌ Not Implemented**
 
 ---
 
@@ -10,35 +10,37 @@ Settings system provides configuration for generation parameters, UI behavior, t
 
 **Related docs**: [API Reference](./api-reference.md) (generation parameters), [Chat](./02-chat.md) (UI behavior), [Persistence](./07-persistence.md) (storage architecture)
 
+**Current Status**: No custom settings UI. Only BodhiProvider setup modal exists for connection configuration (extension vs direct).
+
 ---
 
 ## Functional Requirements
 
 ### User Should Be Able To
 
-1. **Configure Generation**
-   - Set temperature, top_p, top_k, min_p
-   - Configure penalties (repeat, presence, frequency)
-   - Set max tokens (-1 for infinite)
-   - Define sampler order
+1. ❌ **Configure Generation**
+   - ❌ Set temperature, top_p, top_k, min_p
+   - ❌ Configure penalties (repeat, presence, frequency)
+   - ❌ Set max tokens (-1 for infinite)
+   - ❌ Define sampler order
 
-2. **Customize UI**
-   - Choose theme (system/light/dark)
-   - Toggle message statistics display
-   - Toggle auto-scroll
-   - Show/hide tool calls
-   - Configure sidebar behavior
+2. ❌ **Customize UI**
+   - ❌ Choose theme (system/light/dark)
+   - ❌ Toggle message statistics display
+   - ❌ Toggle auto-scroll
+   - ❌ Show/hide tool calls
+   - ❌ Configure sidebar behavior
 
-3. **Set System Prompt**
-   - Define global system message
-   - Clear system message
-   - Applies to all new conversations
+3. ❌ **Set System Prompt**
+   - ❌ Define global system message
+   - ❌ Clear system message
+   - ❌ Applies to all new conversations
 
-4. **Manage Settings**
-   - Save changes (auto-save)
-   - Reset to defaults
-   - Import/export settings JSON
-   - See which values differ from defaults
+4. ❌ **Manage Settings**
+   - ❌ Save changes (auto-save)
+   - ❌ Reset to defaults
+   - ❌ Import/export settings JSON
+   - ❌ See which values differ from defaults
 
 ---
 

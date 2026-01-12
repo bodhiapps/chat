@@ -1,6 +1,6 @@
 # Feature: Tool Calls Display
 
-> Priority: 4 | Status: Core Feature
+> Priority: 4 | Status: Core Feature | **Implementation: 🔄 Schema Only**
 
 ---
 
@@ -10,44 +10,46 @@ Tool call display shows function/tool invocations made by AI models, rendering t
 
 **Related docs**: [API Reference](./api-reference.md) (tool_calls format), [Chat](./02-chat.md) (streaming integration), [Settings](./06-settings.md) (showToolCalls option)
 
+**Current Status**: Schema has `MessageExtra.tool_calls?: unknown[]` field defined, but no parsing or display UI implemented.
+
 ---
 
 ## Functional Requirements
 
 ### User Should Be Able To
 
-1. **View Tool Calls**
-   - See tool call badges below assistant message
-   - View function name as badge label
-   - Click badge to copy JSON payload
-   - See tooltip with formatted JSON on hover
+1. ❌ **View Tool Calls**
+   - ❌ See tool call badges below assistant message
+   - ❌ View function name as badge label
+   - ❌ Click badge to copy JSON payload
+   - ❌ See tooltip with formatted JSON on hover
 
-2. **Understand Tool Calls**
-   - Identify which functions were called
-   - See function arguments (parsed JSON)
-   - Copy full payload for debugging
-   - Distinguish multiple tool calls (numbered)
+2. ❌ **Understand Tool Calls**
+   - ❌ Identify which functions were called
+   - ❌ See function arguments (parsed JSON)
+   - ❌ Copy full payload for debugging
+   - ❌ Distinguish multiple tool calls (numbered)
 
 ---
 
 ## System Should
 
-1. **Parse Tool Calls**
-   - Extract from `delta.tool_calls` in stream
-   - Aggregate deltas by index
-   - Merge partial JSON arguments
-   - Store as JSON string in database
+1. 🔄 **Parse Tool Calls**
+   - ❌ Extract from `delta.tool_calls` in stream
+   - ❌ Aggregate deltas by index
+   - ❌ Merge partial JSON arguments
+   - 🔄 Store as JSON string in database - _Schema field exists: `MessageExtra.tool_calls?: unknown[]`_
 
-2. **Format Display**
-   - Parse stored JSON string
-   - Format function arguments (pretty JSON)
-   - Handle malformed JSON gracefully
-   - Truncate long function names
+2. ❌ **Format Display**
+   - ❌ Parse stored JSON string
+   - ❌ Format function arguments (pretty JSON)
+   - ❌ Handle malformed JSON gracefully
+   - ❌ Truncate long function names
 
-3. **Handle Visibility**
-   - Show only if `showToolCalls` setting enabled
-   - Hide in readonly/archived messages (optional)
-   - Display after message content
+3. ❌ **Handle Visibility**
+   - ❌ Show only if `showToolCalls` setting enabled
+   - ❌ Hide in readonly/archived messages (optional)
+   - ❌ Display after message content
 
 ---
 

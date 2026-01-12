@@ -1,6 +1,6 @@
 # Feature: Persistence
 
-> Priority: 7 | Status: Core Feature
+> Priority: 7 | Status: Core Feature | **Implementation: ✅ Full**
 
 ---
 
@@ -10,58 +10,63 @@ Persistence layer uses IndexedDB (via Dexie) to store conversations and messages
 
 **Related docs**: [Libraries](./libraries.md) (Dexie), [Settings](./06-settings.md) (localStorage usage), [Chat](./02-chat.md) (message structure)
 
+**Current Status**: Fully implemented with user-scoped storage, pinning, search, and quota handling. Import/export and tree structure deferred.
+
 ---
 
 ## Functional Requirements
 
 ### User Should Be Able To
 
-1. **Manage Conversations**
-   - Create new conversations
-   - Rename conversations
-   - Delete conversations (with confirmation)
-   - View conversation list (sorted by recent)
-   - Search conversations by title
+1. ✅ **Manage Conversations**
+   - ✅ Create new conversations
+   - ✅ Rename conversations (inline edit in ConversationItem)
+   - ✅ Delete conversations (with confirmation dialog)
+   - ✅ View conversation list (sorted by recent)
+   - ✅ Search conversations by title AND full-text message content
+   - ✅ Pin conversations (toggle, sorted to top)
 
-2. **Persist Messages**
-   - All messages auto-saved to IndexedDB
-   - Messages include content, attachments, timings
-   - Tree structure preserved (branching support deferred)
-   - Model name saved per message
+2. 🔄 **Persist Messages**
+   - ✅ All messages auto-saved to IndexedDB
+   - ✅ Messages include content, model name
+   - ❌ Messages include attachments, timings
+   - ❌ Tree structure preserved (branching support deferred)
+   - ✅ Model name saved per message
 
-3. **Import/Export**
-   - Export single conversation as JSON
-   - Export all conversations as JSON
-   - Import conversation(s) from JSON file
-   - Skip duplicate IDs on import
+3. ❌ **Import/Export**
+   - ❌ Export single conversation as JSON
+   - ❌ Export all conversations as JSON
+   - ❌ Import conversation(s) from JSON file
+   - ❌ Skip duplicate IDs on import
 
-4. **Data Portability**
-   - Standard JSON format
-   - Human-readable structure
-   - Cross-device compatible
-   - Backup and restore capability
+4. ❌ **Data Portability**
+   - ❌ Standard JSON format
+   - ❌ Human-readable structure
+   - ❌ Cross-device compatible
+   - ❌ Backup and restore capability
 
 ---
 
 ## System Should
 
-1. **Store Locally**
-   - Use IndexedDB for persistence
-   - Auto-save every message
-   - Update on every edit
-   - Handle quota exceeded errors
+1. ✅ **Store Locally**
+   - ✅ Use IndexedDB for persistence (Dexie ORM, database: `BodhiChat`)
+   - ✅ Auto-save every message
+   - ✅ Update on every edit
+   - ✅ Handle quota exceeded errors (auto-cleanup oldest unpinned conversations)
 
-2. **Maintain Relationships**
-   - Link messages to conversations (foreign key)
-   - Track active message (currNode)
-   - Support parent-child relationships (for future branching)
-   - Preserve chronological order
+2. 🔄 **Maintain Relationships**
+   - ✅ Link messages to conversations (foreign key `convId`)
+   - ❌ Track active message (currNode) - _Not implemented, simpler schema_
+   - ❌ Support parent-child relationships (for future branching) - _Not implemented_
+   - ✅ Preserve chronological order (via `createdAt` timestamp)
+   - ✅ User-scoped storage (conversations filtered by `userId`)
 
-3. **Manage Lifecycle**
-   - Create conversation with root message
-   - Update lastModified on any change
-   - Cascade delete (conversation → messages)
-   - Clean up orphaned data
+3. 🔄 **Manage Lifecycle**
+   - ❌ Create conversation with root message - _No root message in schema_
+   - ✅ Update lastModified on any change
+   - ✅ Cascade delete (conversation → messages)
+   - ✅ Clean up orphaned data (auto-cleanup on quota exceeded)
 
 ---
 

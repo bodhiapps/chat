@@ -18,63 +18,63 @@ Model selection enables users to choose which AI model to use for conversations.
 
 ### User Should Be Able To
 
-1. **View Available Models**
-   - See list of all available models
-   - Identify which models are currently loaded/unloaded
-   - Search/filter models by name or identifier
-   - See model capabilities (vision, audio support)
+1. 🔄 **View Available Models**
+   - ✅ See list of all available models
+   - ❌ Identify which models are currently loaded/unloaded
+   - ❌ Search/filter models by name or identifier
+   - ❌ See model capabilities (vision, audio support)
 
-2. **Select a Model**
-   - Choose a model from dropdown (multi-model mode)
-   - Selection auto-loads model if not already loaded
-   - System prevents selecting incompatible models when content requires specific capabilities
-   - Input focus returns to chat after selection
+2. 🔄 **Select a Model**
+   - ✅ Choose a model from dropdown (multi-model mode)
+   - ❌ Selection auto-loads model if not already loaded
+   - ❌ System prevents selecting incompatible models when content requires specific capabilities
+   - ✅ Input focus returns to chat after selection
 
-3. **View Model Information**
-   - Click model name to see detailed information (single-model mode only)
-   - View context size, parameters, modalities
-   - See model path and build info
-   - Copy model filename to clipboard
+3. ❌ **View Model Information**
+   - ❌ Click model name to see detailed information (single-model mode only)
+   - ❌ View context size, parameters, modalities
+   - ❌ See model path and build info
+   - ❌ Copy model filename to clipboard
 
-4. **Manage Loaded Models**
-   - See which models are currently loaded (green indicator)
-   - Unload models to free resources (multi-model mode)
-   - View loading progress (spinner indicator)
-   - See failed model states
+4. ❌ **Manage Loaded Models**
+   - ❌ See which models are currently loaded (green indicator)
+   - ❌ Unload models to free resources (multi-model mode)
+   - ❌ View loading progress (spinner indicator)
+   - ❌ See failed model states
 
-5. **Handle Model Compatibility**
-   - System disables models that don't support required content types
-   - Visual indicators show missing capabilities (eye-off, mic-off icons)
-   - Tooltips explain why model is incompatible
-   - Incompatible models appear greyed out but remain visible
+5. ❌ **Handle Model Compatibility**
+   - ❌ System disables models that don't support required content types
+   - ❌ Visual indicators show missing capabilities (eye-off, mic-off icons)
+   - ❌ Tooltips explain why model is incompatible
+   - ❌ Incompatible models appear greyed out but remain visible
 
 ---
 
 ## System Should
 
-1. **Auto-load Models** (multi-model mode)
-   - Automatically load selected model if not already running
-   - Poll model status until loaded (30 second timeout)
-   - Fetch model capabilities after successful load
-   - Show loading state during operation
+1. ❌ **Auto-load Models** (multi-model mode)
+   - ❌ Automatically load selected model if not already running
+   - ❌ Poll model status until loaded (30 second timeout)
+   - ❌ Fetch model capabilities after successful load
+   - ❌ Show loading state during operation
 
-2. **Track Model Status**
-   - Monitor: `loaded`, `loading`, `unloaded`, `failed` states
-   - Update status in real-time
-   - Display appropriate indicators per state
+2. ❌ **Track Model Status**
+   - ❌ Monitor: `loaded`, `loading`, `unloaded`, `failed` states
+   - ❌ Update status in real-time
+   - ❌ Display appropriate indicators per state
 
-3. **Validate Capabilities**
-   - Check model modalities before allowing selection
-   - Required modalities determined by message content:
+3. ❌ **Validate Capabilities**
+   - ❌ Check model modalities before allowing selection
+   - ❌ Required modalities determined by message content:
      - Vision: If message contains images
      - Audio: If message contains audio
-   - Cache modality information per model
+   - ❌ Cache modality information per model
 
-4. **Handle Edge Cases**
-   - Show "not available" state for models that exist in conversation but not in cache
-   - Display error messages for failed operations
-   - Gracefully handle load/unload failures
-   - Maintain selection state across page reloads
+4. 🔄 **Handle Edge Cases**
+   - ❌ Show "not available" state for models that exist in conversation but not in cache
+   - ❌ Display error messages for failed operations
+   - ❌ Gracefully handle load/unload failures
+   - ✅ Maintain selection state across page reloads
 
 ---
 

@@ -1,6 +1,6 @@
 # Feature: Keyboard Shortcuts
 
-> Priority: 5 | Status: Core Feature
+> Priority: 5 | Status: Core Feature | **Implementation: ❌ Minimal**
 
 ---
 
@@ -10,41 +10,43 @@ Keyboard shortcuts enable power users to navigate and control the chat interface
 
 **Related docs**: [Chat](./02-chat.md) (message input), [Persistence](./07-persistence.md) (conversation search)
 
+**Current Status**: Only Enter to send message implemented. Search modal exists but no Ctrl+K shortcut.
+
 ---
 
 ## Functional Requirements
 
 ### User Should Be Able To
 
-1. **Navigate Conversations**
-   - Open conversation search (Ctrl/Cmd+K)
-   - Create new chat (Ctrl/Cmd+Shift+O)
-   - Edit active conversation name (Ctrl/Cmd+Shift+E)
+1. ❌ **Navigate Conversations**
+   - ❌ Open conversation search (Ctrl/Cmd+K) - _Search modal exists, shortcut missing_
+   - ❌ Create new chat (Ctrl/Cmd+Shift+O) - _New chat button exists, shortcut missing_
+   - ❌ Edit active conversation name (Ctrl/Cmd+Shift+E) - _Inline edit exists, shortcut missing_
 
-2. **Control Message Input**
-   - Send message (Enter)
-   - New line in message (Shift+Enter)
-   - Focus input (automatic after actions)
+2. 🔄 **Control Message Input**
+   - ✅ Send message (Enter) - _Implemented in InputArea.tsx line 71_
+   - ❌ New line in message (Shift+Enter)
+   - ✅ Focus input (automatic after actions)
 
-3. **Manage Messages**
-   - Exit search mode (Escape)
-   - Stop generation (Enter on stop button focus)
-   - Confirm edits (Enter in edit mode)
+3. ❌ **Manage Messages**
+   - ❌ Exit search mode (Escape)
+   - ❌ Stop generation (Enter on stop button focus)
+   - ❌ Confirm edits (Enter in edit mode)
 
 ---
 
 ## Keyboard Shortcuts Table
 
-| Shortcut | Action | Context | Behavior |
-|----------|--------|---------|----------|
-| **Ctrl/Cmd + K** | Search conversations | Global | Opens sidebar search, focuses input |
-| **Ctrl/Cmd + Shift + O** | New chat | Global | Creates conversation, navigates to it |
-| **Ctrl/Cmd + Shift + E** | Edit conversation | Global (sidebar) | Opens rename dialog for active conv |
-| **Enter** | Send message | Chat textarea | Submits message, starts generation |
-| **Shift + Enter** | New line | Chat textarea | Inserts line break |
-| **Escape** | Exit search | Sidebar search | Clears search, returns to conv list |
-| **Enter** | Confirm edit | Edit dialog | Saves conversation name |
-| **Enter** | Stop generation | Stop button focused | Aborts active generation |
+| Shortcut | Status | Action | Context | Behavior |
+|----------|--------|--------|---------|----------|
+| **Ctrl/Cmd + K** | ❌ | Search conversations | Global | Opens sidebar search, focuses input |
+| **Ctrl/Cmd + Shift + O** | ❌ | New chat | Global | Creates conversation, navigates to it |
+| **Ctrl/Cmd + Shift + E** | ❌ | Edit conversation | Global (sidebar) | Opens rename dialog for active conv |
+| **Enter** | ✅ | Send message | Chat textarea | Submits message, starts generation |
+| **Shift + Enter** | ❌ | New line | Chat textarea | Inserts line break |
+| **Escape** | ❌ | Exit search | Sidebar search | Clears search, returns to conv list |
+| **Enter** | ❌ | Confirm edit | Edit dialog | Saves conversation name |
+| **Enter** | ❌ | Stop generation | Stop button focused | Aborts active generation |
 
 ---
 

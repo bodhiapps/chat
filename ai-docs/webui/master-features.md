@@ -2,6 +2,22 @@
 
 > Reverse-engineered from llama.cpp webui for implementation in bodhiapps/chat
 
+## Implementation Progress
+
+| Feature | Status | Implementation Notes |
+|---------|--------|---------------------|
+| **Model Selection** | 🔄 Basic | List + select + refresh working; missing: auto-load, capabilities, model info dialog |
+| **Chat Interface** | 🔄 Basic | Streaming + retry + regenerate working; missing: markdown, syntax highlighting, stats, message actions |
+| **File Attachments** | ❌ Not Started | No file upload/attachment capabilities |
+| **Tool Calls** | ❌ Schema Only | `MessageExtra.tool_calls` field exists; no display UI |
+| **Keyboard Shortcuts** | ❌ Minimal | Only Enter to send; missing: Ctrl+K, Shift+Ctrl+O, Shift+Enter |
+| **Settings** | ❌ Not Implemented | Uses BodhiProvider modal for connection only; no generation params |
+| **Persistence** | ✅ Full | Dexie + user-scoped + CRUD + pin + search + quota handling all working |
+
+**Legend**: ✅ Fully Implemented | 🔄 Partially Implemented | ❌ Not Implemented
+
+---
+
 ## Document Index
 
 - [Libraries & Dependencies](./libraries.md)

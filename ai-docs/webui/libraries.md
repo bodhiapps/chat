@@ -6,10 +6,9 @@
 
 ## Status Legend
 
-- ✅ **Already Available** - Installed in bodhiapps/chat
-- 🔄 **Same Library** - Use identical library (framework-agnostic)
-- ➕ **Need to Add** - Requires installation
-- 🔀 **Equivalent** - React-specific alternative
+- ✅ **Installed** - Available in bodhiapps/chat package.json
+- ❌ **Not Installed** - Requires installation for feature parity
+- 🔀 **React Equivalent** - React-specific alternative (vs Svelte original)
 
 ---
 
@@ -19,14 +18,14 @@
 |--------------------|------------------------|--------|---------|
 | `bits-ui` v2.14.4 | `shadcn/ui` (Radix UI) | 🔀 ✅ | Headless UI component primitives (Dialog, Dropdown, Select, etc.) |
 | `@lucide/svelte` v0.515.0 | `lucide-react` v0.562.0 | 🔀 ✅ | Icon library |
-| `tailwindcss` v4.0.0 | `tailwindcss` v4.1.18 | 🔄 ✅ | CSS framework |
-| `@tailwindcss/vite` v4.0.0 | `@tailwindcss/vite` v4.1.18 | 🔄 ✅ | Tailwind Vite plugin |
-| `@tailwindcss/forms` v0.5.9 | N/A | ➕ | Form element styling |
-| `@tailwindcss/typography` v0.5.15 | N/A | ➕ | Prose/typography styling |
-| `tailwind-merge` v3.3.1 | `tailwind-merge` v3.4.0 | 🔄 ✅ | Merge Tailwind classes |
-| `tailwind-variants` v3.2.2 | N/A | ➕ | Variant-based component styling |
-| `clsx` v2.1.1 | `clsx` v2.1.1 | 🔄 ✅ | Conditional class utility |
-| `tw-animate-css` v1.3.5 | `tw-animate-css` v1.4.0 | 🔄 ✅ | Animation utilities |
+| `tailwindcss` v4.0.0 | `tailwindcss` v4.1.18 | ✅ | CSS framework |
+| `@tailwindcss/vite` v4.0.0 | `@tailwindcss/vite` v4.1.18 | ✅ | Tailwind Vite plugin |
+| `@tailwindcss/forms` v0.5.9 | N/A | ❌ | Form element styling |
+| `@tailwindcss/typography` v0.5.15 | N/A | ❌ | Prose/typography styling |
+| `tailwind-merge` v3.3.1 | `tailwind-merge` v3.4.0 | ✅ | Merge Tailwind classes |
+| `tailwind-variants` v3.2.2 | N/A | ❌ | Variant-based component styling |
+| `clsx` v2.1.1 | `clsx` v2.1.1 | ✅ | Conditional class utility |
+| `tw-animate-css` v1.3.5 | `tw-animate-css` v1.4.0 | ✅ | Animation utilities |
 
 ---
 
@@ -34,7 +33,7 @@
 
 | llama.cpp (Svelte) | bodhiapps/chat (React) | Status | Purpose |
 |--------------------|------------------------|--------|---------|
-| `mode-watcher` v1.1.0 | `next-themes` v0.4.6 | 🔀 ✅ | Dark/light mode detection and switching |
+| `mode-watcher` v1.1.0 | `next-themes` v0.4.6 | 🔀 ✅ | Dark/light mode detection and switching (not used yet) |
 | `svelte-sonner` v1.0.5 | `sonner` v2.0.7 | 🔀 ✅ | Toast notifications |
 
 ---
@@ -44,18 +43,18 @@
 
 | llama.cpp (Svelte) | bodhiapps/chat (React) | Status | Purpose |
 |--------------------|------------------------|--------|---------|
-| `highlight.js` v11.11.1 | `highlight.js` v11.11.1 | 🔄 ➕ | Code syntax highlighting |
-| `remark` v15.0.1 | `remark` v15.0.1 | 🔄 ➕ | Markdown AST processing (base parser) |
-| `remark-gfm` v4.0.1 | `remark-gfm` v4.0.1 | 🔄 ➕ | GitHub Flavored Markdown (tables, strikethrough, autolinks) |
-| `remark-breaks` v4.0.0 | `remark-breaks` v4.0.0 | 🔄 ➕ | Convert line breaks to `<br>` tags |
-| `remark-html` v16.0.1 | `remark-html` v16.0.1 | 🔄 ➕ | Convert markdown to HTML |
-| `remark-rehype` v11.1.2 | `remark-rehype` v11.1.2 | 🔄 ➕ | Bridge between remark (mdast) and rehype (hast) |
-| `remark-math` v6.0.0 | `remark-math` v6.0.0 | 🔄 ➕ | Parse LaTeX math syntax |
-| `rehype-highlight` v7.0.2 | `rehype-highlight` v7.0.2 | 🔄 ➕ | Syntax highlighting via rehype |
-| `rehype-katex` v7.0.1 | `rehype-katex` v7.0.1 | 🔄 ➕ | LaTeX/Math rendering via KaTeX |
-| `rehype-stringify` v10.0.1 | `rehype-stringify` v10.0.1 | 🔄 ➕ | Serialize HAST to HTML string |
-| `unist-util-visit` v5.0.0 | `unist-util-visit` v5.0.0 | 🔄 ➕ | Unified AST traversal utilities |
-| `unified` v11.0.5 | `unified` v11.0.5 | 🔄 ➕ | Text processing ecosystem (used by remark/rehype) |
+| `highlight.js` v11.11.1 | `highlight.js` v11.11.1 | ❌ | Code syntax highlighting |
+| `remark` v15.0.1 | `remark` v15.0.1 | ❌ | Markdown AST processing (base parser) |
+| `remark-gfm` v4.0.1 | `remark-gfm` v4.0.1 | ❌ | GitHub Flavored Markdown (tables, strikethrough, autolinks) |
+| `remark-breaks` v4.0.0 | `remark-breaks` v4.0.0 | ❌ | Convert line breaks to `<br>` tags |
+| `remark-html` v16.0.1 | `remark-html` v16.0.1 | ❌ | Convert markdown to HTML |
+| `remark-rehype` v11.1.2 | `remark-rehype` v11.1.2 | ❌ | Bridge between remark (mdast) and rehype (hast) |
+| `remark-math` v6.0.0 | `remark-math` v6.0.0 | ❌ | Parse LaTeX math syntax |
+| `rehype-highlight` v7.0.2 | `rehype-highlight` v7.0.2 | ❌ | Syntax highlighting via rehype |
+| `rehype-katex` v7.0.1 | `rehype-katex` v7.0.1 | ❌ | LaTeX/Math rendering via KaTeX |
+| `rehype-stringify` v10.0.1 | `rehype-stringify` v10.0.1 | ❌ | Serialize HAST to HTML string |
+| `unist-util-visit` v5.0.0 | `unist-util-visit` v5.0.0 | ❌ | Unified AST traversal utilities |
+| `unified` v11.0.5 | `unified` v11.0.5 | ❌ | Text processing ecosystem (used by remark/rehype) |
 
 **Alternative**: Could use `react-markdown` v9.x as a simpler all-in-one solution, but remark/rehype pipeline offers more control and matches llama.cpp implementation.
 
@@ -66,8 +65,8 @@
 
 | llama.cpp (Svelte) | bodhiapps/chat (React) | Status | Purpose |
 |--------------------|------------------------|--------|---------|
-| `pdfjs-dist` v5.4.54 | `pdfjs-dist` v5.4.54 | 🔄 ➕ | PDF file parsing and rendering |
-| `fflate` v0.8.2 | `fflate` v0.8.2 | 🔄 ➕ | Compression library (for import/export) |
+| `pdfjs-dist` v5.4.54 | `pdfjs-dist` v5.4.54 | ❌ | PDF file parsing and rendering |
+| `fflate` v0.8.2 | `fflate` v0.8.2 | ❌ | Compression library (for import/export) |
 
 ---
 
@@ -76,8 +75,8 @@
 
 | llama.cpp (Svelte) | bodhiapps/chat (React) | Status | Purpose |
 |--------------------|------------------------|--------|---------|
-| `dexie` v4.0.11 | `dexie` v4.0.11 | 🔄 ➕ | IndexedDB wrapper for conversation persistence |
-| `uuid` v13.0.0 | `uuid` v13.0.0 | 🔄 ➕ | UUID generation for IDs |
+| `dexie` v4.0.11 | `dexie` v4.0.11 | ✅ | IndexedDB wrapper for conversation persistence |
+| `uuid` v13.0.0 | `uuid` v13.0.0 | ✅ | UUID generation for IDs |
 
 ---
 
@@ -88,15 +87,15 @@
 | `@sveltejs/kit` | N/A | N/A | SvelteKit framework (not needed for Vite+React) |
 | `@sveltejs/adapter-static` | N/A | N/A | Static site generation (not needed) |
 | `svelte`, `svelte-check` | `react`, `react-dom` | 🔀 ✅ | Framework |
-| `@vitejs/plugin-react` | `@vitejs/plugin-react` v5.1.1 | 🔄 ✅ | React plugin for Vite |
-| `vite` v7.2.2 | `vite` v7.2.4 | 🔄 ✅ | Build tool |
-| `vitest` v3.2.3 | `vitest` v4.0.16 | 🔄 ✅ | Unit testing |
-| `@vitest/browser` v3.2.3 | N/A | ➕ | Browser-based testing |
-| `playwright` v1.56.1 | `playwright` v1.57.0 | 🔄 ✅ | E2E testing |
-| `typescript` v5.0.0 | `typescript` v5.9.3 | 🔄 ✅ | TypeScript compiler |
-| `sass` v1.93.3 | N/A | ➕ | SCSS preprocessing (for KaTeX custom styles) |
-| `prettier` v3.4.2 | `prettier` v3.7.4 | 🔄 ✅ | Code formatting |
-| `eslint` v9.18.0 | `eslint` v9.39.1 | 🔄 ✅ | Linting |
+| `@vitejs/plugin-react` | `@vitejs/plugin-react` v5.1.1 | ✅ | React plugin for Vite |
+| `vite` v7.2.2 | `vite` v7.2.4 | ✅ | Build tool |
+| `vitest` v3.2.3 | `vitest` v4.0.16 | ✅ | Unit testing |
+| `@vitest/browser` v3.2.3 | N/A | ❌ | Browser-based testing |
+| `playwright` v1.56.1 | `playwright` v1.57.0 | ✅ | E2E testing |
+| `typescript` v5.0.0 | `typescript` v5.9.3 | ✅ | TypeScript compiler |
+| `sass` v1.93.3 | N/A | ❌ | SCSS preprocessing (for KaTeX custom styles) |
+| `prettier` v3.4.2 | `prettier` v3.7.4 | ✅ | Code formatting |
+| `eslint` v9.18.0 | `eslint` v9.39.1 | ✅ | Linting |
 
 ---
 

@@ -1,6 +1,6 @@
 # Feature: File Attachments
 
-> Priority: 3 | Status: Core Feature
+> Priority: 3 | Status: Core Feature | **Implementation: ❌ Not Started**
 
 ---
 
@@ -14,44 +14,44 @@ File attachment system enables users to upload images, PDFs, audio files, and te
 
 ### User Should Be Able To
 
-1. **Upload Files**
-   - Click attachment button → select files from dialog
-   - Drag files onto chat area
-   - Paste files from clipboard (Ctrl/Cmd+V)
-   - Paste images directly from screenshots
-   - Record audio (microphone button)
+1. ❌ **Upload Files**
+   - ❌ Click attachment button → select files from dialog
+   - ❌ Drag files onto chat area
+   - ❌ Paste files from clipboard (Ctrl/Cmd+V)
+   - ❌ Paste images directly from screenshots
+   - ❌ Record audio (microphone button)
 
-2. **Preview Attachments**
-   - See image thumbnails (before send)
-   - See text file previews (first 150 chars)
-   - See PDF icon with page count
-   - See audio player controls
-   - Click thumbnail for full preview dialog
+2. ❌ **Preview Attachments**
+   - ❌ See image thumbnails (before send)
+   - ❌ See text file previews (first 150 chars)
+   - ❌ See PDF icon with page count
+   - ❌ See audio player controls
+   - ❌ Click thumbnail for full preview dialog
 
-3. **Manage Attachments**
-   - Remove individual attachments (X button)
-   - Remove all attachments (clear button)
-   - View in single-row scrollable list
-   - See file size per attachment
+3. ❌ **Manage Attachments**
+   - ❌ Remove individual attachments (X button)
+   - ❌ Remove all attachments (clear button)
+   - ❌ View in single-row scrollable list
+   - ❌ See file size per attachment
 
-4. **View Full Previews**
-   - Images: Full-size with zoom
-   - PDFs: Text view OR pages view (toggle)
-   - Text: Syntax-highlighted code
-   - Audio: Playable with controls
+4. ❌ **View Full Previews**
+   - ❌ Images: Full-size with zoom
+   - ❌ PDFs: Text view OR pages view (toggle)
+   - ❌ Text: Syntax-highlighted code
+   - ❌ Audio: Playable with controls
 
 ---
 
 ## System Should
 
-1. **Validate Capability**
-   - Disable image upload if model lacks vision
-   - Disable audio upload if model lacks audio support
-   - Show warning icon for incompatible files
-   - Suggest vision model for PDFs with images
+1. ❌ **Validate Capability**
+   - ❌ Disable image upload if model lacks vision
+   - ❌ Disable audio upload if model lacks audio support
+   - ❌ Show warning icon for incompatible files
+   - ❌ Suggest vision model for PDFs with images
 
-2. **Process Files**
-   - Convert SVG → PNG (white background)
+2. ❌ **Process Files**
+   - ❌ Convert SVG → PNG (white background)
    - Convert WebP → PNG
    - Extract text from PDFs (pdfjs-dist)
    - Convert PDF pages to images (for vision models)

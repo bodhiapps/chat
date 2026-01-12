@@ -16,78 +16,78 @@ Chat interface enables real-time streaming conversations with AI models, support
 
 ### User Should Be Able To
 
-1. **Send Messages**
-   - Type message in textarea
-   - Press Enter to send (Shift+Enter for newline)
-   - See message immediately in chat history
-   - Send with file attachments
+1. 🔄 **Send Messages**
+   - ✅ Type message in textarea
+   - ❌ Press Enter to send (Shift+Enter for newline) - _Only Enter works, no Shift+Enter_
+   - ✅ See message immediately in chat history
+   - ❌ Send with file attachments
 
-2. **Receive Streaming Responses**
-   - See tokens appear in real-time
-   - View reasoning/thinking content separately (collapsible)
-   - See generation progress (tokens, speed)
-   - Stop generation mid-stream (saves partial)
+2. 🔄 **Receive Streaming Responses**
+   - ✅ See tokens appear in real-time
+   - ❌ View reasoning/thinking content separately (collapsible)
+   - ❌ See generation progress (tokens, speed)
+   - ✅ Stop generation mid-stream (saves partial)
 
-3. **View Formatted Content**
-   - Markdown rendering (GFM + KaTeX math)
-   - Syntax-highlighted code blocks
-   - Copy code button on blocks
-   - HTML preview for code (security-validated)
-   - LaTeX math rendering
+3. ❌ **View Formatted Content**
+   - ❌ Markdown rendering (GFM + KaTeX math)
+   - ❌ Syntax-highlighted code blocks
+   - ❌ Copy code button on blocks
+   - ❌ HTML preview for code (security-validated)
+   - ❌ LaTeX math rendering
 
-4. **Manage Messages**
-   - Copy message text
-   - Edit user messages (preserves responses)
-   - Edit assistant messages (option to regenerate)
-   - Regenerate assistant responses
-   - Delete individual messages
-   - Continue generation (extend response)
+4. 🔄 **Manage Messages**
+   - ❌ Copy message text
+   - ❌ Edit user messages (preserves responses)
+   - ❌ Edit assistant messages (option to regenerate)
+   - ✅ Regenerate assistant responses
+   - ❌ Delete individual messages
+   - ❌ Continue generation (extend response)
 
-5. **View Statistics**
-   - See tokens/sec during generation
-   - View prompt processing time
-   - See total tokens generated
-   - View cache utilization
+5. ❌ **View Statistics**
+   - ❌ See tokens/sec during generation
+   - ❌ View prompt processing time
+   - ❌ See total tokens generated
+   - ❌ View cache utilization
 
-6. **Navigate Content**
-   - Auto-scroll during generation
-   - Manual scroll disables auto-scroll
-   - Re-enable by scrolling to bottom
-   - Smooth/instant scroll options
+6. 🔄 **Navigate Content**
+   - ✅ Auto-scroll during generation
+   - 🔄 Manual scroll disables auto-scroll - _Basic detection, no 10px threshold_
+   - 🔄 Re-enable by scrolling to bottom
+   - ❌ Smooth/instant scroll options
 
 ---
 
 ## System Should
 
-1. **Handle Streaming**
-   - Parse SSE format (`data:` lines)
-   - Aggregate partial tokens into words
-   - Update UI every 100ms (batch updates)
-   - Handle reconnection on network errors
+1. 🔄 **Handle Streaming**
+   - ✅ Parse SSE format (`data:` lines)
+   - ✅ Aggregate partial tokens into words
+   - 🔄 Update UI every 100ms (batch updates) - _Updates on each chunk_
+   - ❌ Handle reconnection on network errors
 
-2. **Process Content**
-   - Separate reasoning_content from regular content
-   - Parse tool_calls deltas (aggregate by index)
-   - Extract timing data from stream
-   - Track prompt progress percentage
+2. 🔄 **Process Content**
+   - ❌ Separate reasoning_content from regular content
+   - ❌ Parse tool_calls deltas (aggregate by index)
+   - ❌ Extract timing data from stream
+   - ❌ Track prompt progress percentage
 
-3. **Render Incrementally**
-   - Cache stable markdown blocks
-   - Only re-render incomplete last block
-   - Apply syntax highlighting post-render
-   - Bind event handlers to code blocks
+3. ❌ **Render Incrementally**
+   - ❌ Cache stable markdown blocks
+   - ❌ Only re-render incomplete last block
+   - ❌ Apply syntax highlighting post-render
+   - ❌ Bind event handlers to code blocks
 
-4. **Manage State**
-   - Track per-conversation loading/streaming
-   - Store partial responses on abort
-   - Save timings with messages
-   - Update lastModified on conversation
+4. 🔄 **Manage State**
+   - ✅ Track per-conversation loading/streaming
+   - ✅ Store partial responses on abort
+   - ❌ Save timings with messages
+   - ✅ Update lastModified on conversation
 
-5. **Detect User Actions**
-   - Track scroll position (10px threshold from bottom)
-   - Detect user scrolled up vs auto-scroll
-   - Debounce scroll events (100ms)
-   - Clear auto-scroll on manual scroll up
+5. 🔄 **Detect User Actions**
+   - 🔄 Track scroll position (10px threshold from bottom) - _Basic tracking, no threshold_
+   - 🔄 Detect user scrolled up vs auto-scroll
+   - ❌ Debounce scroll events (100ms)
+   - 🔄 Clear auto-scroll on manual scroll up
 
 ---
 
