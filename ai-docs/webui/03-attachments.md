@@ -1,5 +1,8 @@
 # Feature: File Attachments
 
+> **Source Reference Base Path**:
+> `$webui-folder = /Users/amir36/Documents/workspace/src/github.com/ggml-org/llama.cpp/tools/server/webui`
+
 > Priority: 3 | Status: Core Feature | **Implementation: ❌ Not Started**
 
 ---
@@ -10,324 +13,231 @@ File attachment system enables users to upload images, PDFs, audio files, and te
 
 ---
 
+## User Stories
+
+- ❌ **As a user**, I can upload images to my message so that the AI can see and analyze visual content
+
+- ❌ **As a user**, I can drag-and-drop files onto the chat area so that uploading is quick and intuitive
+
+- ❌ **As a user**, I can paste images from clipboard so that I can share screenshots easily
+
+- ❌ **As a user**, I can record audio directly from microphone so that I can send voice messages
+
+- ❌ **As a user**, I can upload PDFs and text files so that the AI can read document content
+
+- ❌ **As a user**, I can preview attachments before sending so that I verify the correct files
+
+- ❌ **As a user**, I can remove attachments if I change my mind so that I control what gets sent
+
+- ❌ **As a user**, the system prevents incompatible files so that I don't send images to text-only models
+
+---
+
 ## Functional Requirements
 
-### User Should Be Able To
+### Upload Methods
 
-1. ❌ **Upload Files**
-   - ❌ Click attachment button → select files from dialog
-   - ❌ Drag files onto chat area
-   - ❌ Paste files from clipboard (Ctrl/Cmd+V)
-   - ❌ Paste images directly from screenshots
-   - ❌ Record audio (microphone button)
+**Behavior**: Multiple ways to attach files
+- **Button click**: Attachment button → dropdown menu → select file type → file picker dialog
+- **Drag & drop**: Drag files onto chat area → drop → automatic processing
+- **Paste**: Ctrl/Cmd+V with file in clipboard → automatic processing
+- **Audio recording**: Click microphone button → toggle recording → save as WAV file
 
-2. ❌ **Preview Attachments**
-   - ❌ See image thumbnails (before send)
-   - ❌ See text file previews (first 150 chars)
-   - ❌ See PDF icon with page count
-   - ❌ See audio player controls
-   - ❌ Click thumbnail for full preview dialog
+**Edge Cases**:
+- Unsupported file type → Show error toast, ignore file
+- Multiple files at once → Process all valid files
+- File too large → Server rejects (handle 413 error)
 
-3. ❌ **Manage Attachments**
-   - ❌ Remove individual attachments (X button)
-   - ❌ Remove all attachments (clear button)
-   - ❌ View in single-row scrollable list
-   - ❌ See file size per attachment
+### File Type Support
 
-4. ❌ **View Full Previews**
-   - ❌ Images: Full-size with zoom
-   - ❌ PDFs: Text view OR pages view (toggle)
-   - ❌ Text: Syntax-highlighted code
-   - ❌ Audio: Playable with controls
+**Images** (5 formats):
+- JPEG, PNG, GIF → Use as-is
+- WebP, SVG → Auto-convert to PNG
 
----
+**Audio** (3 formats):
+- MP3, WAV → Use as-is
+- WebM → From live recording
 
-## System Should
+**PDFs**:
+- Text extraction for text models
+- Image conversion for vision models
 
-1. ❌ **Validate Capability**
-   - ❌ Disable image upload if model lacks vision
-   - ❌ Disable audio upload if model lacks audio support
-   - ❌ Show warning icon for incompatible files
-   - ❌ Suggest vision model for PDFs with images
+**Text** (25+ formats):
+- Plain text, Markdown, code files, JSON, YAML, XML, HTML, CSS, etc.
 
-2. ❌ **Process Files**
-   - ❌ Convert SVG → PNG (white background)
-   - Convert WebP → PNG
-   - Extract text from PDFs (pdfjs-dist)
-   - Convert PDF pages to images (for vision models)
-   - Generate base64 data URLs for preview
+### Attachment Preview
 
-3. **Handle Formats**
-   - Images: JPEG, PNG, GIF, WebP, SVG → convert to PNG/JPEG
-   - Audio: MP3, WAV, WebM (from recording)
-   - PDFs: Text extraction or image conversion
-   - Text: 25+ formats (code, markdown, logs, etc.)
+**Behavior**: Show previews before sending
+- **Images**: Thumbnail with aspect ratio preserved
+- **PDFs**: Icon with page count
+- **Text**: First 150 characters with ellipsis
+- **Audio**: Audio player icon
+- Horizontal scrollable row (single-row layout)
+- Remove button (X) on each thumbnail
 
----
-
-## Supported File Types
-
-### Images (5 formats)
-- JPEG (`.jpg`, `.jpeg`)
-- PNG (`.png`)
-- GIF (`.gif`)
-- WebP (`.webp`) - converts to PNG
-- SVG (`.svg`) - converts to PNG with white background
-
-### Audio (3 formats)
-- MP3 (`.mp3`)
-- WAV (`.wav`)
-- WebM (`audio/webm`) - from live recording
-
-### PDFs (1 format)
-- PDF (`.pdf`) - text extraction OR image conversion
-
-### Text (25+ formats)
-Plain text, Markdown, JavaScript, TypeScript, Python, Java, C++, Go, Rust, Shell, JSON, YAML, XML, HTML, CSS, SQL, and more.
-
----
-
-## UI Components Needed
-
-### Attachment Button
-- Paperclip icon
-- Opens dropdown menu:
-  - "Images" (disabled if no vision)
-  - "Audio Files" (disabled if no audio)
-  - "Text Files" (always enabled)
-  - "PDF Files" (with warning if no vision)
-- Shows count badge when files attached
-
-### Microphone Button
-- Microphone icon
-- Toggle recording on/off
-- Red indicator when recording
-- Disabled if no audio support
-- Browser permission required
-
-### Attachment List (Pre-send)
-- Horizontal scrollable row
-- Thumbnail per file (64px height)
-- Remove button (X) on hover
-- Chevron scroll buttons (left/right)
-- "View all" expands to full view
-
-### Image Thumbnail
-- Rounded corners with shadow
-- Base64 preview
-- Aspect ratio preserved
-- Click opens full preview
-
-### File Thumbnail
-- Type badge (PDF, TXT, etc.)
-- File name (truncated)
-- Text preview (first 150 chars with fade)
-- File size
+**Actions**:
+- Click thumbnail → Open full preview dialog
+- Click remove (X) → Remove from list
+- "Clear all" → Remove all attachments
 
 ### Full Preview Dialog
-- Modal overlay
-- Image: Full-size with object-contain
-- PDF: Toggle tabs (Text/Pages)
-- Text: Syntax-highlighted with language detection
-- Audio: HTML5 audio player
-- Close button (X)
+
+**Behavior**: Modal overlay showing full content
+- **Images**: Full-size with object-contain, zoom support
+- **PDFs**: Toggle tabs (Text view | Pages view)
+- **Text**: Syntax-highlighted with language detection
+- **Audio**: HTML5 audio player with controls
+- Close button (X) or Escape key to dismiss
+
+### Capability Validation
+
+**Behavior**: System validates model compatibility
+- If model lacks vision → Disable image upload, show warning
+- If model lacks audio → Disable audio recording, show warning
+- If PDF with images + text model → Show warning, suggest vision model
+- Incompatible files → Warning icon, tooltip explaining issue
+- Send button disabled if incompatible files present
+
+**Edge Cases**:
+- User switches model after attaching files → Re-validate capabilities
+- Model capabilities unknown → Assume incompatible (safe default)
+
+### File Processing
+
+**Behavior**: Automatic format conversion where needed
+- **SVG → PNG**: Render to canvas with white background, convert to PNG
+- **WebP → PNG**: Load image, render to canvas, export as PNG
+- **PDF text extraction**: Use pdfjs-dist to extract text from all pages
+- **PDF image conversion**: Render each page to canvas at 1.5x scale, export as PNG
+- **Text files**: Read as UTF-8 text
+- **Audio files**: Store as base64 data URL
+
+**Edge Cases**:
+- PDF text extraction fails → Offer image conversion or skip
+- Canvas rendering fails → Show error, allow retry
+- Invalid file data → Show error, ignore file
 
 ---
 
-## Upload Methods
+## Data Model
 
-### 1. Button Click
-```typescript
-// Invisible file input
-<input type="file" 
-  accept="image/*" 
-  multiple 
-  onChange={handleFiles} 
-  ref={fileInputRef} 
-/>
+**Attachment Entity** (pre-send):
+- `file` (File): Original browser File object
+- `type` (enum): IMAGE | AUDIO | PDF | TEXT
+- `preview` (string): Base64 data URL for thumbnail
+- `content` (string, optional): Extracted text content
 
-// Trigger via dropdown
-function handleImageClick() {
-  fileInputRef.current?.click();
-}
-```
+**DatabaseMessageExtra** (post-send, stored):
+- `type` (enum): IMAGE | AUDIO | PDF | TEXT
+- `name` (string): Filename
+- `base64Url` (string, optional): Preview thumbnail
+- `base64Data` (string, optional): Full file data
+- `content` (string, optional): Text content
+- `images` (array, optional): PDF pages as PNG base64
+- `mimeType` (string, optional): Original MIME type
+- `processedAsImages` (boolean, optional): Whether PDF was converted to images
 
-### 2. Drag & Drop
-```typescript
-function handleDrop(event: DragEvent) {
-  event.preventDefault();
-  const files = Array.from(event.dataTransfer.files);
-  processFiles(files);
-}
-```
-
-### 3. Paste from Clipboard
-```typescript
-function handlePaste(event: ClipboardEvent) {
-  const items = event.clipboardData.items;
-  const files = Array.from(items)
-    .filter(item => item.kind === 'file')
-    .map(item => item.getAsFile())
-    .filter((file): file is File => file !== null);
-  
-  if (files.length > 0) {
-    event.preventDefault();
-    processFiles(files);
-  }
-}
-```
-
-### 4. Audio Recording
-```typescript
-// Start recording
-const stream = await navigator.mediaDevices.getUserMedia({ 
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true
-  }
-});
-const recorder = new MediaRecorder(stream);
-
-// Stop & save
-recorder.stop();
-const audioBlob = await getRecordedBlob();
-const wavBlob = await convertToWav(audioBlob);
-const file = new File([wavBlob], `recording-${Date.now()}.wav`);
-```
+**Storage**: Attachments stored in `message.extra` array in IndexedDB
 
 ---
 
-## File Processing Pipeline
+## Acceptance Criteria
 
-### Images
-1. Read file as data URL: `FileReader.readAsDataURL()`
-2. Check format: SVG or WebP?
-3. If SVG: Convert to PNG via canvas
-4. If WebP: Convert to PNG via canvas
-5. Store: `{ preview: base64DataUrl, file: File }`
+### Scenario: Upload image via button
 
-**SVG Conversion**:
-```typescript
-const img = new Image();
-img.src = svgDataUrl;
-img.onload = () => {
-  const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth || 300;
-  canvas.height = img.naturalHeight || 300;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'white'; // Background
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0);
-  resolve(canvas.toDataURL('image/png'));
-};
-```
+- **GIVEN** model supports vision
+- **WHEN** user clicks attachment button
+- **THEN** dropdown menu appears
+- **WHEN** user clicks "Images"
+- **THEN** file picker opens filtered to image types
+- **WHEN** user selects image file
+- **THEN** thumbnail appears in attachment list
+- **AND** image is processed to base64
 
-### PDFs
-**Text Extraction**:
-```typescript
-import * as pdfjs from 'pdfjs-dist';
+### Scenario: Drag and drop multiple files
 
-const arrayBuffer = await file.arrayBuffer();
-const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-let text = '';
+- **GIVEN** user has multiple files selected
+- **WHEN** user drags files onto chat area
+- **THEN** drop zone highlight appears
+- **WHEN** user drops files
+- **THEN** all valid files are processed
+- **AND** thumbnails appear for each file
+- **AND** unsupported files show error toast
 
-for (let i = 1; i <= pdf.numPages; i++) {
-  const page = await pdf.getPage(i);
-  const textContent = await page.getTextContent();
-  text += textContent.items.map(item => item.str).join(' ') + '\n';
-}
-```
+### Scenario: Paste image from clipboard
 
-**Image Conversion** (for vision models):
-```typescript
-for (let i = 1; i <= pdf.numPages; i++) {
-  const page = await pdf.getPage(i);
-  const viewport = page.getViewport({ scale: 1.5 });
-  const canvas = document.createElement('canvas');
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
-  
-  await page.render({
-    canvasContext: canvas.getContext('2d'),
-    viewport
-  }).promise;
-  
-  images.push(canvas.toDataURL('image/png'));
-}
-```
+- **GIVEN** user has image in clipboard
+- **WHEN** user presses Ctrl/Cmd+V in textarea
+- **THEN** image is extracted from clipboard
+- **AND** thumbnail appears in attachment list
+- **AND** paste event is handled (not inserted as text)
 
-### Text Files
-```typescript
-const textContent = await file.text(); // UTF-8 decode
-store({ textContent, preview: textContent.slice(0, 150) });
-```
+### Scenario: Record audio
 
-### Audio Files
-```typescript
-const dataUrl = await readAsDataURL(file);
-store({ preview: dataUrl, file });
-```
+- **GIVEN** model supports audio
+- **WHEN** user clicks microphone button
+- **THEN** browser requests microphone permission
+- **WHEN** permission granted and recording starts
+- **THEN** microphone button shows red indicator
+- **WHEN** user clicks button again to stop
+- **THEN** recording saves as WAV file
+- **AND** audio thumbnail appears with player
 
----
+### Scenario: Prevent incompatible upload
 
-## Capability Validation
+- **GIVEN** model does NOT support vision
+- **WHEN** user clicks attachment button
+- **THEN** "Images" option is disabled in dropdown
+- **AND** tooltip shows "Model doesn't support vision"
+- **WHEN** user tries to paste image
+- **THEN** warning toast appears
+- **AND** image is not attached
 
-### Check Model Capabilities
-```typescript
-const modelModalities = modelsStore.getModelModalities(selectedModelId);
+### Scenario: Remove attachment
 
-// Validate images
-if (hasImageAttachments && !modelModalities?.vision) {
-  showWarning('Images require vision-capable model');
-  disableImageButton();
-}
+- **GIVEN** user has attached files
+- **WHEN** user hovers over thumbnail
+- **THEN** remove button (X) appears
+- **WHEN** user clicks remove button
+- **THEN** attachment is removed from list
+- **AND** preview is cleared from memory
 
-// Validate audio
-if (hasAudioAttachments && !modelModalities?.audio) {
-  showWarning('Audio requires audio-capable model');
-  disableAudioButton();
-}
-```
+### Scenario: Preview PDF as text
 
-### Filter Files by Capability
-```typescript
-function filterByCapability(files: File[], capabilities: ModelCapabilities) {
-  return files.filter(file => {
-    const category = getFileCategory(file.type);
-    
-    switch (category) {
-      case 'IMAGE':
-        return capabilities.vision;
-      case 'AUDIO':
-        return capabilities.audio;
-      case 'PDF':
-      case 'TEXT':
-        return true; // Always supported
-      default:
-        return false;
-    }
-  });
-}
-```
+- **GIVEN** user attached PDF file
+- **WHEN** user clicks PDF thumbnail
+- **THEN** preview dialog opens
+- **AND** "Text" tab is selected by default
+- **AND** extracted text content is displayed
+- **WHEN** user clicks "Pages" tab
+- **THEN** PDF pages render as images in scrollable view
+
+### Scenario: Switch model after attaching
+
+- **GIVEN** user attached image with vision model selected
+- **WHEN** user switches to text-only model
+- **THEN** image attachment shows warning icon
+- **AND** tooltip says "Model doesn't support vision"
+- **AND** send button is disabled
 
 ---
 
-## API Format
+## API Integration
 
-### Message Content with Attachments
+### Message Content Format with Attachments
+
 ```typescript
 {
   role: 'user',
   content: [
     { type: 'text', text: 'What is in this image?' },
-    { 
-      type: 'image_url', 
+    {
+      type: 'image_url',
       image_url: { url: 'data:image/png;base64,iVBORw0KG...' }
     },
     {
       type: 'input_audio',
-      input_audio: { 
+      input_audio: {
         data: 'base64_audio_data',
         format: 'wav'
       }
@@ -336,19 +246,16 @@ function filterByCapability(files: File[], capabilities: ModelCapabilities) {
 }
 ```
 
----
+### Storage Format in IndexedDB
 
-## Storage Format
-
-### In Database
 ```typescript
 interface DatabaseMessageExtra {
   type: 'IMAGE' | 'AUDIO' | 'PDF' | 'TEXT';
   name: string;
   base64Url?: string;      // Preview thumbnail
   base64Data?: string;     // Full file data
-  content?: string;        // Text content
-  images?: string[];       // PDF pages as PNG
+  content?: string;        // Text content (for PDFs, text files)
+  images?: string[];       // PDF pages as PNG base64
   mimeType?: string;
   processedAsImages?: boolean;
 }
@@ -370,100 +277,158 @@ interface DatabaseMessageExtra {
 
 ---
 
-## Error Handling
+## Reference Implementation
 
-### Unsupported Format
-- Toast: "File type not supported: {type}"
-- List supported formats
-- Ignore file, don't block other uploads
+> **Svelte Source**: llama.cpp webui uses Svelte 5 for attachment handling. Adapt to React patterns.
 
-### File Too Large
-- No explicit frontend limit
-- Server may reject (handle 413 error)
-- Suggest: "File too large, try compressing"
+**Key Files**:
+- `$webui-folder/src/lib/components/app/chat/ChatAttachments/` - Attachment UI components
+- `$webui-folder/src/lib/utils/attachments.ts` - File processing utilities
+- `$webui-folder/src/lib/stores/chat.svelte.ts` - Attachment state management
 
-### PDF Processing Failure
-- Try text extraction first
-- If fails: show error, offer to skip
-- Don't block message send
+> **Note**: Svelte patterns (`$state`, `$effect`) should be adapted to React (`useState`, `useEffect`).
 
-### Audio Recording Failure
-- Check browser support: `MediaRecorder` availability
-- Request microphone permission
-- Show error: "Microphone access denied"
-- Fallback: File upload instead
+### File Upload Methods
 
-### Capability Mismatch
-- Warning icon on incompatible files
-- Tooltip: "Model doesn't support {type}"
-- Disable send button
-- Suggest compatible model
+**Button Click**:
+```
+1. Hidden <input type="file" /> with accept filter
+2. Dropdown menu triggers fileInputRef.current.click()
+3. onChange event → processFiles(event.target.files)
+```
+
+**Drag & Drop**:
+```
+1. onDrop event → event.preventDefault()
+2. Extract files from event.dataTransfer.files
+3. Filter and process valid files
+```
+
+**Paste**:
+```
+1. onPaste event in textarea
+2. Extract items from event.clipboardData.items
+3. Filter kind='file', get File objects
+4. Prevent default paste if files found
+```
+
+**Audio Recording**:
+```
+1. Request microphone: navigator.mediaDevices.getUserMedia()
+2. Create MediaRecorder with audio settings
+3. Collect audio data in chunks
+4. On stop: combine chunks → Blob → convert to WAV → File object
+```
+
+See `$webui-folder/src/lib/components/app/chat/ChatForm/ChatForm.svelte` for upload implementations.
+
+### File Processing Algorithms
+
+**SVG/WebP to PNG Conversion**:
+```
+1. Create Image element, set src to file data URL
+2. On image load: create canvas with image dimensions
+3. Fill canvas with white background
+4. Draw image onto canvas
+5. Export canvas.toDataURL('image/png')
+```
+
+**PDF Text Extraction**:
+```
+1. Load PDF: pdfjs.getDocument(arrayBuffer).promise
+2. For each page (1 to numPages):
+   - Get page: pdf.getPage(i)
+   - Get text: page.getTextContent()
+   - Extract strings: textContent.items.map(item => item.str)
+3. Concatenate all page text
+```
+
+**PDF to Images** (for vision models):
+```
+1. For each PDF page:
+   - Get viewport at 1.5x scale
+   - Create canvas sized to viewport
+   - Render page to canvas
+   - Export canvas.toDataURL('image/png')
+2. Store array of PNG base64 strings
+```
+
+See `$webui-folder/src/lib/utils/attachments.ts` for processing utilities.
+
+### Capability Validation
+
+```
+1. Get model modalities from model store
+2. Check file type:
+   - IMAGE → requires vision=true
+   - AUDIO → requires audio=true
+   - PDF, TEXT → always allowed
+3. If required capability missing:
+   - Disable upload button
+   - Show warning icon on file
+   - Add tooltip explaining incompatibility
+```
 
 ---
 
-## Testing Considerations
+## UI Components
 
-### Unit Tests
-1. File type detection (MIME type → category)
-2. SVG/WebP conversion (canvas rendering)
-3. PDF text extraction (pdfjs)
-4. Audio recording (MediaRecorder mock)
-5. Capability validation logic
+### Attachment Button
+- Paperclip icon + count badge (if files attached)
+- Dropdown menu with file type options (disabled based on capabilities)
 
-### Integration Tests
-1. Upload flow: Select → Preview → Send
-2. Drag-drop: Drop → Process → Display
-3. Paste: Clipboard → Extract → Preview
-4. Remove: Click X → File removed from list
+### Microphone Button
+- Microphone icon, red indicator when recording
+- Disabled if model lacks audio support
 
-### Visual Tests
-1. Image thumbnails (various aspect ratios)
-2. File thumbnails (long names, sizes)
-3. Preview dialog (all file types)
-4. Scrollable row (many attachments)
+### Attachment List
+- Horizontal scrollable row, 64px thumbnails
+- Remove button (X) on hover/always (mobile)
+- "View all" button if many files
+
+### Preview Dialog
+- Modal overlay with file-specific content
+- Close button, Escape key to dismiss
 
 ---
 
 ## Accessibility
 
-### Keyboard Navigation
-- Tab to attachment button
-- Enter/Space to open menu
-- Arrow keys to navigate menu
-- Tab to file thumbnails
-- Enter to open preview
+**Keyboard Navigation**:
+- Tab to attachment button, Enter to open menu
+- Arrow keys to navigate menu, Enter to select
+- Tab through thumbnails, Enter to preview
 - Escape to close preview
 
-### Screen Reader
-- Button: "Add attachments"
-- Menu items: "Add images", "Record audio", etc.
+**Screen Reader**:
+- Button: "Add attachments, {count} attached"
+- Menu items: "Add images", "Record audio" (with disabled state)
 - Thumbnails: "{filename}, {type}, {size}"
 - Remove: "Remove {filename}"
-- Recording: "Recording in progress"
-
-### Focus Management
-- Focus file input on menu select
-- Return focus to button after upload
-- Trap focus in preview dialog
-- Focus remove button on thumbnail hover
 
 ---
 
 ## Responsive Design
 
-### Desktop
-- Single row layout (horizontal scroll)
-- Thumbnails: 64px height
-- Chevron buttons on hover
-- Remove button on hover
-
-### Mobile
-- Single row (horizontal scroll)
-- Thumbnails: 48px height  
-- Touch scroll (no chevrons)
-- Remove always visible
-- Long-press for preview
+| Breakpoint | Thumbnail Size | Remove Button | Scroll |
+|------------|----------------|---------------|--------|
+| Desktop (>768px) | 64px | On hover | Chevron buttons |
+| Mobile (<768px) | 48px | Always visible | Touch scroll |
 
 ---
 
-_Updated: Phase attachments completed_
+## Verification
+
+**Manual Testing**:
+1. Click attachment button → Select image → Verify thumbnail appears
+2. Drag multiple files onto chat → Verify all valid files processed
+3. Copy image → Paste in textarea → Verify image attached
+4. Click microphone → Record audio → Stop → Verify audio file created
+5. Attach image with text-only model → Verify warning + disabled send
+6. Click thumbnail → Verify preview dialog opens with correct content
+7. Remove attachment → Verify removed from list
+8. Attach PDF → Preview → Toggle Text/Pages tabs → Verify both views work
+
+---
+
+_Updated: Revised for functional focus, reduced code ratio_

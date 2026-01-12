@@ -1,5 +1,8 @@
 # Feature: Tool Calls Display
 
+> **Source Reference Base Path**:
+> `$webui-folder = /Users/amir36/Documents/workspace/src/github.com/ggml-org/llama.cpp/tools/server/webui`
+
 > Priority: 4 | Status: Core Feature | **Implementation: 🔄 Schema Only**
 
 ---
@@ -8,72 +11,56 @@
 
 Tool call display shows function/tool invocations made by AI models, rendering them as clickable badges with formatted JSON payloads.
 
-**Related docs**: [API Reference](./api-reference.md) (tool_calls format), [Chat](./02-chat.md) (streaming integration), [Settings](./06-settings.md) (showToolCalls option)
+**Related docs**: [API Reference](./api-reference.md), [Chat](./02-chat.md), [Settings](./06-settings.md)
 
-**Current Status**: Schema has `MessageExtra.tool_calls?: unknown[]` field defined, but no parsing or display UI implemented.
+**Current Status**: Schema has `MessageExtra.tool_calls?: unknown[]` defined, but no parsing or display UI.
+
+---
+
+## User Stories
+
+- ❌ **As a user**, I can see tool call badges below assistant messages so that I know which functions the AI called
+
+- ❌ **As a user**, I can click badges to copy JSON payloads so that I can debug or inspect the details
+
+- ❌ **As a user**, I can hover badges to see formatted JSON so that I understand the function arguments
+
+- ❌ **As a user**, the system distinguishes multiple tool calls so that I can identify each function invocation
 
 ---
 
 ## Functional Requirements
 
-### User Should Be Able To
+### Tool Call Display
 
-1. ❌ **View Tool Calls**
-   - ❌ See tool call badges below assistant message
-   - ❌ View function name as badge label
-   - ❌ Click badge to copy JSON payload
-   - ❌ See tooltip with formatted JSON on hover
-
-2. ❌ **Understand Tool Calls**
-   - ❌ Identify which functions were called
-   - ❌ See function arguments (parsed JSON)
-   - ❌ Copy full payload for debugging
-   - ❌ Distinguish multiple tool calls (numbered)
-
----
-
-## System Should
-
-1. 🔄 **Parse Tool Calls**
-   - ❌ Extract from `delta.tool_calls` in stream
-   - ❌ Aggregate deltas by index
-   - ❌ Merge partial JSON arguments
-   - 🔄 Store as JSON string in database - _Schema field exists: `MessageExtra.tool_calls?: unknown[]`_
-
-2. ❌ **Format Display**
-   - ❌ Parse stored JSON string
-   - ❌ Format function arguments (pretty JSON)
-   - ❌ Handle malformed JSON gracefully
-   - ❌ Truncate long function names
-
-3. ❌ **Handle Visibility**
-   - ❌ Show only if `showToolCalls` setting enabled
-   - ❌ Hide in readonly/archived messages (optional)
-   - ❌ Display after message content
-
----
-
-## UI Components Needed
-
-### Tool Call Badge
-- Compact pill-shaped button
-- Function name as label
+**Behavior**: Show function invocations as badges
+- Badges appear below assistant message content
+- Function name displayed as badge label
 - Wrench icon prefix
-- Tooltip with formatted JSON
-- Copy icon (shows on hover)
-- Max width with ellipsis
+- Multiple badges shown in flex row (wraps to multiple lines)
+- Label: "Tool calls:" prefix
 
-### Tool Calls Container
-- Flex row with gap
-- Wraps to multiple lines
-- Subtle text color (muted)
-- Label: "Tool calls:"
+**Visibility**:
+- Only shown if `showToolCalls` setting enabled
+- Hidden if message has no tool calls
+
+**Edge Cases**:
+- Function name missing → Show "Call #N" as fallback
+- Malformed JSON → Show raw string in fallback badge
+- Empty tool calls array → Don't render container
+
+### Badge Interaction
+
+**Behavior**: User can interact with badges
+- Hover → Show tooltip with formatted JSON (pretty-printed)
+- Click → Copy full JSON payload to clipboard
+- Long function names → Truncate with ellipsis (max width 12rem)
 
 ---
 
-## Data Structures
+## Data Model
 
-### API Format (Streaming Delta)
+**API Format** (streaming delta):
 ```typescript
 {
   choices: [{
@@ -92,227 +79,166 @@ Tool call display shows function/tool invocations made by AI models, rendering t
 }
 ```
 
-### Storage Format
+**Storage Format** (in DatabaseMessage):
 ```typescript
-// In DatabaseMessage
 {
   toolCalls: '[{"id":"call_123","type":"function","function":{"name":"search","arguments":"{\\"query\\":\\"weather\\"}"}}]'
 }
 ```
 
-### Display Format
+**Display Format**:
 ```typescript
 interface ToolCallBadge {
-  label: string;           // Function name or "Call #N"
-  tooltip: string;         // Pretty JSON
-  copyValue: string;       // Full JSON for clipboard
+  label: string;      // Function name or "Call #N"
+  tooltip: string;    // Pretty JSON
+  copyValue: string;  // Full JSON for clipboard
 }
 ```
 
 ---
 
-## Rendering Logic
+## Acceptance Criteria
 
-### Parse Stored Tool Calls
-```typescript
-let parsedToolCalls: ApiChatCompletionToolCall[] | null = null;
+### Scenario: View tool call badges
 
-try {
-  parsedToolCalls = JSON.parse(message.toolCalls);
-} catch {
-  // Fallback: show raw string
-  fallbackDisplay = message.toolCalls;
-}
+- **GIVEN** assistant message has tool calls
+- **WHEN** `showToolCalls` setting is enabled
+- **THEN** tool call badges appear below message content
+- **AND** each badge shows function name as label
+- **AND** wrench icon appears before badges
+
+### Scenario: Copy tool call payload
+
+- **GIVEN** tool call badge is displayed
+- **WHEN** user clicks badge
+- **THEN** formatted JSON payload is copied to clipboard
+- **AND** toast notification shows "Copied to clipboard"
+
+### Scenario: View formatted JSON tooltip
+
+- **GIVEN** tool call badge is displayed
+- **WHEN** user hovers over badge
+- **THEN** tooltip appears with pretty-printed JSON
+- **AND** JSON includes id, type, function name, and parsed arguments
+
+### Scenario: Handle multiple tool calls
+
+- **GIVEN** assistant message has 3 tool calls
+- **WHEN** message is displayed
+- **THEN** 3 separate badges appear
+- **AND** each badge shows correct function name
+- **AND** badges wrap to multiple lines if needed
+
+### Scenario: Handle malformed JSON
+
+- **GIVEN** stored tool calls JSON is invalid
+- **WHEN** rendering tool calls
+- **THEN** fallback badge displays raw string
+- **AND** badge is still clickable to copy raw content
+- **AND** no error is thrown
+
+---
+
+## Reference Implementation
+
+> **Svelte Source**: llama.cpp webui uses Svelte 5. Adapt to React patterns.
+
+**Key Files**:
+- `$webui-folder/src/lib/components/app/chat/ChatMessages/ToolCallsBadge.svelte` - Badge component
+- `$webui-folder/src/lib/stores/chat.svelte.ts` - Tool call aggregation during streaming
+
+> **Note**: Svelte patterns should be adapted to React (`useState`, `useEffect`).
+
+### Streaming Aggregation Algorithm
+
+```
+1. Initialize Map<index, ToolCall> for tracking tool calls by index
+2. For each streaming chunk with delta.tool_calls:
+   - For each delta in array:
+     - Get index (default 0)
+     - Get existing tool call from map or create empty object
+     - Merge fields: id, type
+     - If delta.function exists:
+       - Merge function.name
+       - Concatenate function.arguments (streaming JSON string)
+     - Store merged tool call back to map
+3. On stream complete: convert map to array
+4. Stringify array and save to database
 ```
 
-### Format Badge
-```typescript
-function formatToolCallBadge(toolCall, index) {
-  const functionName = toolCall.function?.name?.trim() || `Call #${index + 1}`;
-  
-  const payload = {
-    ...(toolCall.id && { id: toolCall.id }),
-    ...(toolCall.type && { type: toolCall.type })
-  };
-  
-  if (toolCall.function) {
-    const fnPayload = {
-      ...(toolCall.function.name && { name: toolCall.function.name })
-    };
-    
-    // Parse arguments JSON
-    if (toolCall.function.arguments) {
-      try {
-        fnPayload.arguments = JSON.parse(toolCall.function.arguments);
-      } catch {
-        fnPayload.arguments = toolCall.function.arguments; // Raw
-      }
-    }
-    
-    payload.function = fnPayload;
-  }
-  
-  return {
-    label: functionName,
-    tooltip: JSON.stringify(payload, null, 2),
-    copyValue: JSON.stringify(payload, null, 2)
-  };
-}
+See `$webui-folder/src/lib/stores/chat.svelte.ts` for delta merging implementation.
+
+### Badge Formatting Algorithm
+
+```
+1. Parse stored tool calls JSON string
+2. If parse fails: return fallback badge with raw string
+3. For each tool call:
+   - Extract function name or use "Call #N" as fallback
+   - Build payload object with id, type, function
+   - Try to parse function.arguments JSON
+   - Pretty-print payload JSON for tooltip
+   - Return: { label, tooltip, copyValue }
 ```
 
-### Render Badges
-```svelte
-{#if config.showToolCalls && toolCalls?.length > 0}
-  <div class="tool-calls-container">
-    <Wrench class="icon" />
-    <span>Tool calls:</span>
-    
-    {#each toolCalls as toolCall, index}
-      {@const badge = formatToolCallBadge(toolCall, index)}
-      <button
-        class="tool-call-badge"
-        title={badge.tooltip}
-        onclick={() => copyToClipboard(badge.copyValue)}
-      >
-        {badge.label}
-        <CopyIcon />
-      </button>
-    {/each}
-  </div>
-{/if}
+### UI Component Structure
+
+```
+<ToolCallsContainer>
+  <WrenchIcon />
+  <span>Tool calls:</span>
+  {toolCalls.map((tc, i) =>
+    <ToolCallBadge
+      label={formatLabel(tc, i)}
+      tooltip={formatTooltip(tc)}
+      onClick={() => copyToClipboard(tc)}
+    />
+  )}
+</ToolCallsContainer>
 ```
 
 ---
 
-## Streaming Aggregation
+## Styling Notes
 
-### Merge Tool Call Deltas
-```typescript
-const toolCallsMap = new Map<number, ApiChatCompletionToolCall>();
+**Tool Calls Container**:
+- Inline-flex with gap, flex-wrap
+- Muted text color
+- Small font size (0.75rem)
 
-// On each chunk with tool_calls delta
-chunk.choices[0].delta.tool_calls?.forEach(delta => {
-  const index = delta.index ?? 0;
-  const existing = toolCallsMap.get(index) || {};
-  
-  // Merge fields
-  const merged = {
-    ...existing,
-    ...(delta.id && { id: delta.id }),
-    ...(delta.type && { type: delta.type })
-  };
-  
-  // Merge function
-  if (delta.function) {
-    merged.function = {
-      ...existing.function,
-      ...(delta.function.name && { name: delta.function.name })
-    };
-    
-    // Concatenate arguments (streaming JSON)
-    if (delta.function.arguments) {
-      merged.function.arguments = 
-        (existing.function?.arguments || '') + delta.function.arguments;
-    }
-  }
-  
-  toolCallsMap.set(index, merged);
-});
+**Badge**:
+- Inline-flex pill button
+- Max width 12rem, ellipsis for overflow
+- Muted background (15% opacity)
+- Hover: increase background opacity (25%)
+- Padding 0.375rem, rounded corners
 
-// Convert to array for storage
-const finalToolCalls = Array.from(toolCallsMap.values());
-```
-
----
-
-## Styling
-
-```css
-.tool-calls-container {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: hsl(var(--muted-foreground));
-}
-
-.tool-call-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  max-width: 12rem;
-  padding: 0.375rem;
-  background: hsl(var(--muted-foreground) / 0.15);
-  border-radius: 0.125rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.tool-call-badge:hover {
-  background: hsl(var(--muted-foreground) / 0.25);
-}
-
-.tool-call-badge--fallback {
-  max-width: 20rem;
-  white-space: normal;
-  word-break: break-word;
-}
-```
-
----
-
-## Error Handling
-
-### Malformed JSON
-- Try to parse `toolCalls` string
-- If fails: Show raw string in fallback badge
-- Label: Full raw content (no parsing)
-- Still copyable
-
-### Missing Fields
-- Function name missing: Use "Call #{index}"
-- Arguments missing: Show empty object `{}`
-- ID missing: Don't show ID in payload
-
-### Empty Tool Calls
-- Don't render container if array is empty
-- Don't crash if `toolCalls` is null/undefined
-
----
-
-## Testing Considerations
-
-### Unit Tests
-1. Parse valid tool calls JSON
-2. Handle malformed JSON (fallback)
-3. Format badge with all fields
-4. Format badge with missing fields
-5. Aggregate streaming deltas
-
-### Integration Tests
-1. Receive tool call in stream → verify badge appears
-2. Click badge → verify clipboard copy
-3. Hover badge → verify tooltip shows
-4. Multiple tool calls → verify all render
+See `$webui-folder/src/lib/components/app/chat/ChatMessages/ToolCallsBadge.svelte` for styling.
 
 ---
 
 ## Accessibility
 
-### Keyboard
+**Keyboard Navigation**:
 - Tab to badge buttons
 - Enter/Space to copy
 - Tooltip on focus
 
-### Screen Reader
+**Screen Reader**:
 - Badge: "Tool call: {function_name}"
 - On click: "Copied to clipboard"
-- Tooltip: Read formatted JSON
 
 ---
 
-_Updated: Phase tools completed_
+## Verification
+
+**Manual Testing**:
+1. Send message that triggers tool call → Verify badge appears
+2. Click badge → Verify JSON copied to clipboard
+3. Hover badge → Verify tooltip shows formatted JSON
+4. Send message with multiple tool calls → Verify all badges render
+5. Disable `showToolCalls` setting → Verify badges hidden
+
+---
+
+_Updated: Revised for functional focus, reduced code ratio_

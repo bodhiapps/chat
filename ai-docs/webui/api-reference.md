@@ -1,18 +1,27 @@
 # API Reference
 
+> **Source Reference Base Path**:
+> `$webui-folder = /Users/amir36/Documents/workspace/src/github.com/ggml-org/llama.cpp/tools/server/webui`
+
 > OpenAI-compatible API endpoints for bodhi-js integration
 
 ---
 
 ## Overview
 
-The bodhi-js API is OpenAI-compatible and provides the following endpoints:
+**Purpose**: This document defines the OpenAI-compatible API contract used for communicating with local LLM servers. These TypeScript interfaces serve as the specification for API requests and responses.
+
+**API Type**: REST API with Server-Sent Events (SSE) for streaming
+
+**Endpoints**:
 - `/v1/chat/completions` - Chat completion with streaming support
 - `/v1/models` - List available models
-- `/v1/embeddings` - Generate embeddings
+- `/v1/embeddings` - Generate embeddings (not implemented in webui)
 - `/props` - Server properties and model capabilities
 
-**Related docs**: [Model Selection](./01-model-selection.md) (model listing), [Chat](./02-chat.md) (streaming implementation), [Settings](./06-settings.md) (generation parameters)
+**Related docs**: [Model Selection](./01-model-selection.md), [Chat](./02-chat.md), [Settings](./06-settings.md)
+
+**Note**: Type definitions below are specifications (not implementation code). Keep these embedded for API contract clarity.
 
 ---
 
@@ -38,7 +47,9 @@ Authorization: Bearer YOUR_API_KEY
 
 ## Endpoints
 
-### 1. Chat Completions
+### Chat Completions API
+
+> **Core endpoint for conversational AI interactions with streaming support**
 
 **Endpoint**: `POST /v1/chat/completions`
 
@@ -238,7 +249,11 @@ interface ContextSizeError {
 
 ---
 
-### 2. Models List
+---
+
+### Models List API
+
+> **Endpoint for listing available models and their load status**
 
 **Endpoint**: `GET /v1/models`
 
@@ -314,7 +329,11 @@ interface ModelEntry {
 
 ---
 
-### 4. Server Properties
+---
+
+### Server Properties API
+
+> **Endpoint for querying server capabilities and model information**
 
 **Endpoint**: `GET /props` or `GET /props?model=<id>&autoload=false`
 
@@ -364,7 +383,11 @@ interface ServerPropsResponse {
 
 ---
 
-### 5. Embeddings (Optional)
+---
+
+### Embeddings API (Optional)
+
+> **Endpoint for generating text embeddings (not used in webui)**
 
 **Endpoint**: `POST /v1/embeddings`
 

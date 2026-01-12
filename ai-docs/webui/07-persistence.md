@@ -1,535 +1,310 @@
 # Feature: Persistence
 
+> **Source Reference Base Path**:
+> `$webui-folder = /Users/amir36/Documents/workspace/src/github.com/ggml-org/llama.cpp/tools/server/webui`
+
 > Priority: 7 | Status: Core Feature | **Implementation: ✅ Full**
 
 ---
 
 ## Overview
 
-Persistence layer uses IndexedDB (via Dexie) to store conversations and messages locally with import/export capability for data portability.
+Persistence layer uses IndexedDB (via Dexie ORM) to store conversations and messages locally with import/export capability for data portability.
 
-**Related docs**: [Libraries](./libraries.md) (Dexie), [Settings](./06-settings.md) (localStorage usage), [Chat](./02-chat.md) (message structure)
+**Related docs**: [Libraries](./libraries.md), [Settings](./06-settings.md), [Chat](./02-chat.md)
 
-**Current Status**: Fully implemented with user-scoped storage, pinning, search, and quota handling. Import/export and tree structure deferred.
+**Current Status**: Fully implemented with user-scoped storage, pinning, search, quota handling. Tree structure (branching) deferred.
+
+---
+
+## User Stories
+
+- ✅ **As a user**, conversations persist locally so that I don't lose chat history on page refresh
+  - ✅ Create new conversations
+  - ✅ Rename conversations (inline edit in ConversationItem)
+  - ✅ Delete conversations (with confirmation dialog)
+  - ✅ View conversation list (sorted by recent)
+  - ✅ Search conversations by title AND full-text message content
+  - ✅ Pin conversations (toggle, sorted to top)
+
+- 🔄 **As a user**, I can search conversations by title and message content so that I can find past discussions
+  - ✅ All messages auto-saved to IndexedDB
+  - ✅ Messages include content, model name
+  - ❌ Messages include attachments, timings
+  - ❌ Tree structure preserved (branching support deferred)
+  - ✅ Model name saved per message
+
+- ✅ **As a user**, I can pin important conversations so that they stay at the top of my list
+
+- ✅ **As a user**, I can delete conversations so that I can clean up my history
+
+- ❌ **As a user**, I can import/export conversations so that I can backup or transfer my data
+  - ❌ Export single conversation as JSON
+  - ❌ Export all conversations as JSON
+  - ❌ Import conversation(s) from JSON file
+  - ❌ Skip duplicate IDs on import
+
+- ✅ **As a user**, the system handles storage quota so that the app doesn't crash when storage fills up
 
 ---
 
 ## Functional Requirements
 
-### User Should Be Able To
+### Conversation Management
 
-1. ✅ **Manage Conversations**
-   - ✅ Create new conversations
-   - ✅ Rename conversations (inline edit in ConversationItem)
-   - ✅ Delete conversations (with confirmation dialog)
-   - ✅ View conversation list (sorted by recent)
-   - ✅ Search conversations by title AND full-text message content
-   - ✅ Pin conversations (toggle, sorted to top)
+**Behavior**: CRUD operations for conversations
+- **Create**: New conversation with unique ID, timestamp
+- **Read**: List all conversations (sorted by lastModified, pinned first)
+- **Update**: Rename, update lastModified on message changes
+- **Delete**: Remove conversation + all associated messages (cascading)
+- **Pin**: Toggle pinned status, sort pinned to top
+- **Search**: Full-text search across conversation titles and message content
 
-2. 🔄 **Persist Messages**
-   - ✅ All messages auto-saved to IndexedDB
-   - ✅ Messages include content, model name
-   - ❌ Messages include attachments, timings
-   - ❌ Tree structure preserved (branching support deferred)
-   - ✅ Model name saved per message
+**Edge Cases**:
+- Storage quota exceeded → Auto-cleanup oldest unpinned conversations
+- User switches → Filter conversations by userId
+- No conversations → Show empty state
 
-3. ❌ **Import/Export**
-   - ❌ Export single conversation as JSON
-   - ❌ Export all conversations as JSON
-   - ❌ Import conversation(s) from JSON file
-   - ❌ Skip duplicate IDs on import
+### Message Persistence
 
-4. ❌ **Data Portability**
-   - ❌ Standard JSON format
-   - ❌ Human-readable structure
-   - ❌ Cross-device compatible
-   - ❌ Backup and restore capability
+**Behavior**: Auto-save messages with relationships
+- Save every message immediately to IndexedDB
+- Link message to conversation via `convId` foreign key
+- Track parent-child relationships (for future branching support)
+- Save message metadata: role, content, model, timestamps, attachments, tool calls
+- Update conversation lastModified on every message change
 
----
+**Edge Cases**:
+- Message with attachments → Store base64 in `extra` array
+- Message with tool calls → Store as JSON string
+- Partial streaming response → Save incremental updates
 
-## System Should
+### Import/Export
 
-1. ✅ **Store Locally**
-   - ✅ Use IndexedDB for persistence (Dexie ORM, database: `BodhiChat`)
-   - ✅ Auto-save every message
-   - ✅ Update on every edit
-   - ✅ Handle quota exceeded errors (auto-cleanup oldest unpinned conversations)
+**Behavior**: Portable JSON format for data backup/transfer
+- **Export single**: Download conversation + messages as JSON file
+- **Export all**: Download all conversations as JSON array
+- **Import**: Load conversations from JSON file
+- Skip duplicate conversation IDs on import
+- Validate structure before importing
 
-2. 🔄 **Maintain Relationships**
-   - ✅ Link messages to conversations (foreign key `convId`)
-   - ❌ Track active message (currNode) - _Not implemented, simpler schema_
-   - ❌ Support parent-child relationships (for future branching) - _Not implemented_
-   - ✅ Preserve chronological order (via `createdAt` timestamp)
-   - ✅ User-scoped storage (conversations filtered by `userId`)
+### User-Scoped Storage
 
-3. 🔄 **Manage Lifecycle**
-   - ❌ Create conversation with root message - _No root message in schema_
-   - ✅ Update lastModified on any change
-   - ✅ Cascade delete (conversation → messages)
-   - ✅ Clean up orphaned data (auto-cleanup on quota exceeded)
+**Behavior**: Isolate data by user
+- Filter conversations by `userId` field
+- Each user sees only their own conversations
+- Support multiple users on same browser (if auth implemented)
 
 ---
 
-## Database Schema
+## Data Model
 
-### Database Name
-`LlamacppWebui` (Dexie ORM)
+### Entities
 
-### Tables
+**Conversation**:
+- `id` (string): UUID primary key
+- `name` (string): Display name
+- `lastModified` (number): Timestamp in milliseconds
+- `currNode` (string | null): Active message ID
+- `userId` (string): User who owns this conversation
+- `isPinned` (boolean): Whether pinned to top
 
-#### Conversations Table
-```typescript
-conversations: 'id, lastModified, currNode, name'
+**Message**:
+- `id` (string): UUID primary key
+- `convId` (string): Foreign key to conversation
+- `type` (enum): root | text | think | system
+- `timestamp` (number): Creation time in milliseconds
+- `role` (enum): user | assistant | system
+- `content` (string): Message text
+- `parent` (string | null): Parent message ID
+- `children` (string[]): Array of child message IDs
+- `thinking` (string): Reasoning/thinking content
+- `toolCalls` (string, optional): JSON string of tool invocations
+- `extra` (array, optional): Attachments (images, PDFs, etc.)
+- `timings` (object, optional): Generation statistics
+- `model` (string, optional): Model used for generation
 
-interface DatabaseConversation {
-  id: string;              // UUID primary key
-  name: string;            // Display name
-  lastModified: number;    // Timestamp (ms)
-  currNode: string | null; // Active message ID
-}
-```
+### Relationships
 
-**Indexes**:
-- `id` (primary key)
-- `lastModified` (for sorting)
+- **Conversation has many Messages**: One-to-many via `convId`
+- **Message has parent Message**: Self-referential via `parent`
+- **Message has children Messages**: Self-referential via `children` array
 
-#### Messages Table
-```typescript
-messages: 'id, convId, type, role, timestamp, parent, children'
+### Storage
 
-interface DatabaseMessage {
-  id: string;                      // UUID primary key
-  convId: string;                  // Foreign key
-  type: 'root' | 'text' | 'think' | 'system';
-  timestamp: number;               // Creation time (ms)
-  role: 'user' | 'assistant' | 'system';
-  content: string;                 // Message text
-  parent: string | null;           // Parent message ID
-  thinking: string;                // Reasoning content
-  toolCalls?: string;              // JSON string
-  children: string[];              // Child message IDs
-  extra?: DatabaseMessageExtra[];  // Attachments
-  timings?: ChatMessageTimings;    // Generation stats
-  model?: string;                  // Model used
-}
-```
-
-**Indexes**:
-- `id` (primary key)
-- `convId` (foreign key)
-- `timestamp` (for ordering)
+- **IndexedDB**: Database name `BodhiChat` (or `LlamacppWebui`)
+- **Tables**: `conversations`, `messages`
+- **Indexes**: `id` (primary), `lastModified`, `convId`, `timestamp`, `userId`
 
 ---
 
-## CRUD Operations
+## Acceptance Criteria
 
-### Create Conversation
-```typescript
-async function createConversation(name: string): Promise<string> {
-  const id = generateUUID();
-  await db.conversations.add({
-    id,
-    name,
-    lastModified: Date.now(),
-    currNode: null
-  });
-  
-  // Create root message (tree anchor)
-  const rootId = await createRootMessage(id);
-  
-  return id;
-}
-```
+### Scenario: Create and persist conversation
 
-### Read Conversations
-```typescript
-async function getAllConversations(): Promise<DatabaseConversation[]> {
-  return db.conversations
-    .orderBy('lastModified')
-    .reverse() // Newest first
-    .toArray();
-}
-```
+- **GIVEN** user starts new chat
+- **WHEN** system creates conversation
+- **THEN** conversation saved to IndexedDB with unique ID
+- **AND** lastModified set to current timestamp
+- **WHEN** user sends first message
+- **THEN** message saved with convId linking to conversation
 
-### Update Conversation
-```typescript
-async function updateConversation(id: string, updates: Partial<DatabaseConversation>) {
-  await db.conversations.update(id, {
-    ...updates,
-    lastModified: Date.now() // Auto-update timestamp
-  });
-}
-```
+### Scenario: Search conversations
 
-### Delete Conversation
-```typescript
-async function deleteConversation(id: string): Promise<void> {
-  await db.transaction('rw', db.conversations, db.messages, async () => {
-    // Delete all messages
-    await db.messages.where('convId').equals(id).delete();
-    // Delete conversation
-    await db.conversations.delete(id);
-  });
-}
-```
+- **GIVEN** user has multiple conversations
+- **WHEN** user types "math" in search box
+- **THEN** conversations with "math" in title are shown
+- **AND** conversations with "math" in any message content are shown
+- **AND** search is case-insensitive
 
----
+### Scenario: Pin conversation
 
-## Message Operations
+- **GIVEN** user has unpinned conversation
+- **WHEN** user clicks pin icon
+- **THEN** conversation moves to top of list
+- **AND** isPinned flag saved to IndexedDB
+- **WHEN** user clicks pin icon again
+- **THEN** conversation unpins and moves to chronological position
 
-### Create Message
-```typescript
-async function createMessage(message: Omit<DatabaseMessage, 'id'>): Promise<string> {
-  const id = generateUUID();
-  
-  await db.transaction('rw', db.messages, db.conversations, async () => {
-    // Insert message
-    await db.messages.add({ ...message, id });
-    
-    // Update parent's children
-    if (message.parent) {
-      const parent = await db.messages.get(message.parent);
-      if (parent) {
-        await db.messages.update(message.parent, {
-          children: [...parent.children, id]
-        });
-      }
-    }
-    
-    // Update conversation currNode
-    await db.conversations.update(message.convId, {
-      currNode: id,
-      lastModified: Date.now()
-    });
-  });
-  
-  return id;
-}
-```
+### Scenario: Delete conversation
 
-### Update Message
-```typescript
-async function updateMessage(id: string, updates: Partial<DatabaseMessage>) {
-  await db.messages.update(id, updates);
-  
-  // Update conversation timestamp
-  const message = await db.messages.get(id);
-  if (message) {
-    await db.conversations.update(message.convId, {
-      lastModified: Date.now()
-    });
-  }
-}
-```
+- **GIVEN** user has conversation with messages
+- **WHEN** user clicks delete button
+- **AND** confirms deletion
+- **THEN** conversation removed from IndexedDB
+- **AND** all associated messages deleted (cascading)
 
-### Delete Message (Cascading)
-```typescript
-async function deleteMessageCascading(convId: string, messageId: string): Promise<string[]> {
-  // Find all descendants
-  const messages = await db.messages.where('convId').equals(convId).toArray();
-  const descendants = findDescendantMessages(messages, messageId);
-  const toDelete = [messageId, ...descendants];
-  
-  await db.transaction('rw', db.messages, async () => {
-    // Remove from parent's children
-    const message = messages.find(m => m.id === messageId);
-    if (message?.parent) {
-      const parent = await db.messages.get(message.parent);
-      if (parent) {
-        await db.messages.update(message.parent, {
-          children: parent.children.filter(id => id !== messageId)
-        });
-      }
-    }
-    
-    // Delete all
-    await db.messages.bulkDelete(toDelete);
-  });
-  
-  return toDelete;
-}
-```
+### Scenario: Storage quota exceeded
+
+- **GIVEN** IndexedDB storage quota reached
+- **WHEN** user tries to save new message
+- **THEN** system detects quota error
+- **AND** automatically deletes oldest unpinned conversation
+- **AND** retries save operation
+- **AND** shows warning toast
+
+### Scenario: Export conversation
+
+- **GIVEN** user has conversation with messages
+- **WHEN** user clicks "Export"
+- **THEN** JSON file downloads with format `conversation_{id}_{name}.json`
+- **AND** file contains conversation object + messages array
+
+### Scenario: Import conversation
+
+- **GIVEN** user has exported JSON file
+- **WHEN** user selects file to import
+- **THEN** system parses JSON
+- **AND** validates structure
+- **WHEN** conversation ID doesn't exist
+- **THEN** conversation and messages imported
+- **WHEN** conversation ID already exists
+- **THEN** import skipped with message "Already exists"
 
 ---
 
-## Import/Export Format
+## Reference Implementation
 
-### Single Conversation Export
+> **Svelte Source**: llama.cpp webui uses Dexie with Svelte 5. Adapt to React patterns.
+
+**Key Files**:
+- `$webui-folder/src/lib/services/database.ts` - Dexie schema, CRUD operations
+- `$webui-folder/src/lib/stores/conversations.svelte.ts` - Conversation state management
+- `$webui-folder/src/lib/types/database.d.ts` - Type definitions
+
+> **Note**: Svelte `$state` should be adapted to React Context or state management library.
+
+### Database Schema
+
+```typescript
+// Dexie schema definition
+{
+  conversations: 'id, lastModified, userId, isPinned',
+  messages: 'id, convId, timestamp'
+}
+```
+
+See `$webui-folder/src/lib/services/database.ts` for full schema.
+
+### CRUD Algorithms
+
+**Create Conversation**:
+```
+1. Generate UUID for conversation ID
+2. Create conversation record with name, timestamp, userId
+3. Insert into IndexedDB conversations table
+4. Return conversation ID
+```
+
+**Delete Conversation (cascading)**:
+```
+1. Start transaction on conversations + messages tables
+2. Query all messages where convId equals conversation ID
+3. Delete all matching messages
+4. Delete conversation record
+5. Commit transaction
+```
+
+**Search Conversations**:
+```
+1. Get all conversations for current userId
+2. Filter by title containing search query (case-insensitive)
+3. Get all messages for userId
+4. Filter messages by content containing search query
+5. Get unique conversation IDs from matching messages
+6. Merge results (conversations matching title OR having matching messages)
+7. Return sorted by lastModified, pinned first
+```
+
+**Auto-cleanup on Quota**:
+```
+1. Catch QuotaExceededError on save
+2. Get all unpinned conversations sorted by lastModified (oldest first)
+3. Delete oldest conversation + messages
+4. Retry save operation
+5. If still failing, repeat cleanup
+6. Show warning toast to user
+```
+
+### Import/Export Format
+
+**Single Conversation JSON**:
 ```json
 {
   "conv": {
-    "id": "abc-123",
+    "id": "uuid",
     "name": "Math Help",
-    "lastModified": 1704067200000,
-    "currNode": "msg-456"
+    "lastModified": 1704067200000
   },
   "messages": [
     {
-      "id": "root-001",
-      "convId": "abc-123",
-      "type": "root",
-      "timestamp": 1704067200000,
-      "role": "system",
-      "content": "",
-      "parent": null,
-      "children": ["msg-001"],
-      "thinking": "",
-      "toolCalls": ""
-    },
-    {
-      "id": "msg-001",
-      "convId": "abc-123",
-      "type": "text",
-      "timestamp": 1704067201000,
+      "id": "msg-1",
+      "convId": "uuid",
       "role": "user",
       "content": "What is 2+2?",
-      "parent": "root-001",
-      "children": ["msg-002"],
-      "thinking": "",
-      "extra": []
-    },
-    {
-      "id": "msg-002",
-      "convId": "abc-123",
-      "type": "text",
-      "timestamp": 1704067202000,
-      "role": "assistant",
-      "content": "2+2 equals 4",
-      "parent": "msg-001",
-      "children": [],
-      "thinking": "Let me calculate...",
-      "timings": {
-        "prompt_n": 10,
-        "predicted_n": 5,
-        "predicted_ms": 250
-      },
-      "model": "llama-3"
+      "timestamp": 1704067200000
     }
   ]
 }
 ```
 
-### Multiple Conversations Export
-```json
-[
-  { "conv": {...}, "messages": [...] },
-  { "conv": {...}, "messages": [...] }
-]
-```
+**Multiple Conversations**: Array of above objects
+
+See `$webui-folder/src/lib/services/database.ts` for import/export implementation.
 
 ---
 
-## Import/Export Implementation
+## Verification
 
-### Export Single
-```typescript
-async function exportConversation(convId: string) {
-  const conv = await db.conversations.get(convId);
-  const messages = await db.messages.where('convId').equals(convId).toArray();
-  
-  const data = { conv, messages };
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  
-  const filename = `conversation_${convId}_${sanitize(conv.name)}.json`;
-  downloadBlob(blob, filename);
-}
-```
-
-### Export All
-```typescript
-async function exportAll() {
-  const conversations = await db.conversations.toArray();
-  const exports = [];
-  
-  for (const conv of conversations) {
-    const messages = await db.messages.where('convId').equals(conv.id).toArray();
-    exports.push({ conv, messages });
-  }
-  
-  const json = JSON.stringify(exports, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const filename = `all_conversations_${formatDate(new Date())}.json`;
-  downloadBlob(blob, filename);
-}
-```
-
-### Import
-```typescript
-async function importConversations(): Promise<{ imported: number; skipped: number }> {
-  const file = await openFilePicker('.json');
-  const text = await file.text();
-  const data = JSON.parse(text);
-  
-  // Handle both single and array format
-  const items = Array.isArray(data) ? data : [data];
-  
-  let imported = 0;
-  let skipped = 0;
-  
-  await db.transaction('rw', db.conversations, db.messages, async () => {
-    for (const item of items) {
-      const { conv, messages } = item;
-      
-      // Skip if conversation already exists
-      const existing = await db.conversations.get(conv.id);
-      if (existing) {
-        skipped++;
-        continue;
-      }
-      
-      // Import conversation
-      await db.conversations.add(conv);
-      
-      // Import messages
-      await db.messages.bulkAdd(messages);
-      
-      imported++;
-    }
-  });
-  
-  return { imported, skipped };
-}
-```
+**Manual Testing**:
+1. Create conversation → Send message → Refresh page → Verify conversation persists
+2. Create 5 conversations → Search for keyword → Verify filtered list
+3. Pin conversation → Verify moves to top → Unpin → Verify returns to chronological
+4. Delete conversation with messages → Verify both conversation and messages removed
+5. Fill storage → Send message → Verify oldest unpinned conversation auto-deleted
+6. Export conversation → Import → Verify data matches
+7. Import existing conversation → Verify skipped with message
 
 ---
 
-## Tree Structure (Branching Support)
-
-### Current Implementation
-- **Root message**: Type `'root'`, not displayed, acts as tree anchor
-- **Parent-child links**: Each message has `parent` field and `children` array
-- **currNode**: Points to active message in branch
-- **Branch navigation**: Deferred (not implemented in UI yet)
-
-### Message Relationships
-```
-root (parent: null)
-  └── user-msg-1 (parent: root, children: [assist-msg-1])
-       └── assist-msg-1 (parent: user-msg-1, children: [user-msg-2])
-            └── user-msg-2 (parent: assist-msg-1, children: [])
-```
-
-### Get Active Messages
-```typescript
-function filterByLeafNode(messages: DatabaseMessage[], leafNodeId: string): DatabaseMessage[] {
-  // Trace back from leaf to root via parent chain
-  const path: DatabaseMessage[] = [];
-  let current = messages.find(m => m.id === leafNodeId);
-  
-  while (current) {
-    path.unshift(current);
-    if (!current.parent) break;
-    current = messages.find(m => m.id === current.parent);
-  }
-  
-  // Filter out root message
-  return path.filter(m => m.type !== 'root');
-}
-```
-
----
-
-## Search Implementation
-
-### Title Search (Current)
-```typescript
-async function searchConversations(query: string): Promise<DatabaseConversation[]> {
-  const all = await db.conversations.toArray();
-  const lowerQuery = query.toLowerCase();
-  
-  return all.filter(conv => 
-    conv.name.toLowerCase().includes(lowerQuery)
-  ).sort((a, b) => b.lastModified - a.lastModified);
-}
-```
-
-### Full-Text Search (Future Enhancement)
-```typescript
-async function searchMessages(query: string): Promise<SearchResult[]> {
-  const allMessages = await db.messages.toArray();
-  const matches = allMessages.filter(msg =>
-    msg.content.toLowerCase().includes(query.toLowerCase())
-  );
-  
-  // Group by conversation
-  const grouped = matches.reduce((acc, msg) => {
-    if (!acc[msg.convId]) acc[msg.convId] = [];
-    acc[msg.convId].push(msg);
-    return acc;
-  }, {});
-  
-  return Object.entries(grouped).map(([convId, messages]) => ({
-    conversationId: convId,
-    matches: messages
-  }));
-}
-```
-
----
-
-## Error Handling
-
-### Quota Exceeded
-```typescript
-try {
-  await db.messages.add(message);
-} catch (error) {
-  if (error.name === 'QuotaExceededError') {
-    toast.error('Storage quota exceeded. Please delete old conversations.');
-  }
-}
-```
-
-### Transaction Failures
-```typescript
-try {
-  await db.transaction('rw', db.conversations, db.messages, async () => {
-    // Operations...
-  });
-} catch (error) {
-  console.error('Transaction failed:', error);
-  toast.error('Failed to save changes');
-}
-```
-
-### Import Errors
-```typescript
-try {
-  const result = await importConversations();
-  toast.success(`Imported ${result.imported}, skipped ${result.skipped}`);
-} catch (error) {
-  toast.error('Import failed: Invalid file format');
-}
-```
-
----
-
-## Testing Considerations
-
-### Unit Tests
-1. CRUD operations (create, read, update, delete)
-2. Cascading delete (message + descendants)
-3. Parent-child relationships
-4. Export format (single, multiple)
-5. Import format validation
-
-### Integration Tests
-1. Create conversation → verify in IndexedDB
-2. Send message → verify persisted
-3. Delete conversation → verify cascade
-4. Export → import → verify data integrity
-5. Quota exceeded → verify error handling
-
----
-
-## Accessibility
-
-Not directly user-facing (storage layer), but ensure:
-- Error messages are screen-reader accessible
-- Import/export buttons properly labeled
-- Confirmation dialogs keyboard navigable
-
----
-
-_Updated: Phase persistence completed_
+_Updated: Revised for functional focus, reduced code ratio_

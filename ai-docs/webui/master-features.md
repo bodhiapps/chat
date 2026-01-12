@@ -221,4 +221,18 @@ All 10 documentation files have been created with comprehensive functional requi
 
 ---
 
+## Revision Notes
+
+**Latest Update**: Documentation revised for AI-optimization (January 2026)
+- Reduced code-to-prose ratio from ~31% to 10-20%
+- Added User Stories and GIVEN/WHEN/THEN acceptance criteria to all feature docs
+- Introduced `$webui-folder` convention for source references
+- Replaced implementation code with functional descriptions and pseudocode
+- Flagged Svelte patterns with React adaptation notes
+- Created `_template.md` and `_guidelines.md` for doc standards
+
+**Documentation Status**: All 10 docs optimized for AI/LLM consumption with clear functional requirements.
+
+---
+
 _Documentation completed: All phases finished with cross-references and complete feature inventory._
