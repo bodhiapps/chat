@@ -1,11 +1,17 @@
 import { Page } from '@playwright/test';
+import { SettingsSection } from './SettingsSection';
 
 export class ChatPage {
-  constructor(private page: Page) { }
+  readonly settingsSection: SettingsSection;
+
+  constructor(public page: Page) {
+    this.settingsSection = new SettingsSection(page);
+  }
 
   selectors = {
     appTitle: '[data-testid="app-title"]',
     settingsButton: '[data-testid="btn-settings"]',
+    appSettingsButton: '[data-testid="btn-app-settings"]',
     loginButton: '[data-testid="btn-auth-login"]',
     logoutButton: '[data-testid="btn-auth-logout"]',
     authSection: '[data-testid="section-auth"]',
@@ -116,7 +122,9 @@ export class ChatPage {
       `${this.selectors.assistantMessage}[data-test-index="${lastAssistantIndex}"]`
     );
     await lastAssistantMessage.scrollIntoViewIfNeeded();
-    await lastAssistantMessage.getByText(new RegExp(expectedText, 'i')).waitFor({ state: 'visible' });
+    await lastAssistantMessage
+      .getByText(new RegExp(expectedText, 'i'))
+      .waitFor({ state: 'visible' });
   }
 
   async waitForResponse(timeout = 120000): Promise<string> {
@@ -126,6 +134,24 @@ export class ChatPage {
     const messages = await this.page.locator(this.selectors.assistantMessage).all();
     const lastMessage = messages[messages.length - 1];
     return (await lastMessage.textContent()) || '';
+  }
+
+  async getLastAssistantResponse(): Promise<string> {
+    const messages = await this.page.locator(this.selectors.assistantMessage).all();
+    const lastMessage = messages[messages.length - 1];
+    return (await lastMessage.textContent()) || '';
+  }
+
+  countWords(text: string): number {
+    return text
+      .trim()
+      .split(/\s+/)
+      .filter(word => word.length > 0).length;
+  }
+
+  containsAnyWord(text: string, words: string[]): boolean {
+    const lowerText = text.toLowerCase();
+    return words.some(word => lowerText.includes(word.toLowerCase()));
   }
 
   async clickNewChat(): Promise<void> {
@@ -277,5 +303,24 @@ export class ChatPage {
 
   async isNewChatButtonDisabled(): Promise<boolean> {
     return await this.page.locator(this.selectors.newConversationButton).isDisabled();
+  }
+
+  async openSettings(): Promise<void> {
+    await this.page.locator(this.selectors.appSettingsButton).click();
+    await this.settingsSection.expectOpen();
+  }
+
+  async loginAs(username: string, password: string): Promise<void> {
+    await this.waitForUnauthenticated();
+    await this.clickLoginAndWaitForRedirect();
+    await this.fillKeycloakLogin(username, password);
+    await this.waitForAuthenticated();
+    await this.waitForModelsLoaded();
+  }
+
+  async isDarkMode(): Promise<boolean> {
+    const html = this.page.locator('html');
+    const classList = await html.getAttribute('class');
+    return classList?.includes('dark') || false;
   }
 }

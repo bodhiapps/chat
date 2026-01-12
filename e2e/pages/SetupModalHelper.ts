@@ -48,4 +48,17 @@ export class SetupModalHelper {
   async clickContinueButton(): Promise<void> {
     await this.iframeLocator.locator('[data-testid="continue-button"]').click();
   }
+
+  async completeDirectModeSetup(url: string): Promise<void> {
+    await this.waitForModalVisible();
+    await this.waitForModalReady();
+    await this.waitForServerSetupStep();
+    await this.clickServerConfirmCheckbox();
+    await this.waitForLnaSetupStep();
+    await this.setUrlInput(url);
+    await this.clickConnectButton();
+    await this.waitForSuccessState();
+    await this.clickContinueButton();
+    await this.waitForModalHidden();
+  }
 }

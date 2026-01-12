@@ -15,28 +15,8 @@ test.describe('Core Chat Flow - Direct Mode', () => {
     await page.goto('/');
     await chatPage.waitForPageLoad();
 
-    await setupModal.waitForModalVisible();
-    await setupModal.waitForModalReady();
-
-    await setupModal.waitForServerSetupStep();
-    await setupModal.clickServerConfirmCheckbox();
-
-    await setupModal.waitForLnaSetupStep();
-    await setupModal.setUrlInput(BACKEND_URL);
-    await setupModal.clickConnectButton();
-
-    await setupModal.waitForSuccessState();
-    await setupModal.clickContinueButton();
-    await setupModal.waitForModalHidden();
-
-    await chatPage.waitForUnauthenticated();
-
-    await chatPage.clickLoginAndWaitForRedirect();
-    await chatPage.fillKeycloakLogin(TEST_USER, TEST_PASSWORD);
-
-    await chatPage.waitForAuthenticated();
-
-    await chatPage.waitForModelsLoaded();
+    await setupModal.completeDirectModeSetup(BACKEND_URL);
+    await chatPage.loginAs(TEST_USER, TEST_PASSWORD);
 
     const testMessage = 'Answer in max 4 words: What day comes after Monday?';
     await chatPage.sendMessage(testMessage);

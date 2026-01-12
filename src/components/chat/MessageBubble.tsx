@@ -30,7 +30,9 @@ export function MessageBubble({
         className={cn(
           'max-w-[70%] px-4 py-2 rounded-lg transition-all duration-500',
           isHighlighted && 'ring-2 ring-yellow-400 bg-yellow-50',
-          isUser ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900 border border-gray-200'
+          isUser
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-foreground border border-border'
         )}
       >
         <div className="whitespace-pre-wrap break-words">{message.content}</div>

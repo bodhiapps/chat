@@ -26,3 +26,9 @@ export interface Message {
   model?: string;
   createdAt: number;
 }
+
+export interface UserSettings {
+  userId: string;
+  settings: string; // JSON stringified Settings object
+  lastModified: number;
+}

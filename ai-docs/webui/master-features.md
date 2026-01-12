@@ -7,11 +7,11 @@
 | Feature | Status | Implementation Notes |
 |---------|--------|---------------------|
 | **Model Selection** | 🔄 Basic | List + select + refresh working; missing: auto-load, capabilities, model info dialog |
-| **Chat Interface** | 🔄 Basic | Streaming + retry + regenerate working; missing: markdown, syntax highlighting, stats, message actions |
+| **Chat Interface** | 🔄 Partial | Streaming + retry + regenerate + theme + auto-scroll + gen params working; missing: markdown, code highlighting, stats, message actions |
 | **File Attachments** | ❌ Not Started | No file upload/attachment capabilities |
 | **Tool Calls** | ❌ Schema Only | `MessageExtra.tool_calls` field exists; no display UI |
 | **Keyboard Shortcuts** | ❌ Minimal | Only Enter to send; missing: Ctrl+K, Shift+Ctrl+O, Shift+Enter |
-| **Settings** | ❌ Not Implemented | Uses BodhiProvider modal for connection only; no generation params |
+| **Settings** | ✅ Implemented | 4-tab dialog (General, Sampling, Penalties, Display) with localStorage persistence via SettingsContext |
 | **Persistence** | ✅ Full | Dexie + user-scoped + CRUD + pin + search + quota handling all working |
 
 **Legend**: ✅ Fully Implemented | 🔄 Partially Implemented | ❌ Not Implemented
@@ -45,18 +45,26 @@
 - Auto-loading models on request
 
 ### 2. Chat Interface
-**Status**: Core
+**Status**: 🔄 Partially Implemented
 **Doc**: [02-chat.md](./02-chat.md)
 
-- Streaming text responses via SSE (see [API Reference](./api-reference.md))
-- Reasoning/thinking blocks (collapsible, auto-collapse on regular content)
-- Message actions (copy, edit, regenerate, delete, continue generation)
-- Abort generation (save partial response)
-- Token statistics display (tokens/sec, processing time, live & final)
-- Auto-scroll with user-scroll detection (10px threshold)
-- Full GitHub Flavored Markdown with syntax highlighting
-- LaTeX/math rendering (KaTeX)
-- Auto-grow textarea (max 10 rows)
+**Implemented**:
+- ✅ Streaming text responses via SSE (see [API Reference](./api-reference.md))
+- ✅ Abort generation (save partial response)
+- ✅ Auto-scroll with user-scroll detection (50px threshold)
+- ✅ Settings to disable auto-scroll entirely
+- ✅ Regenerate and retry message functionality
+- ✅ Theme support (light/dark/system via ThemeProvider)
+- ✅ Generation parameters from settings applied to API (temperature, top_p, top_k, min_p, max_tokens, penalties)
+- ✅ System message injection from settings
+
+**Not Implemented**:
+- ❌ Reasoning/thinking blocks (collapsible, auto-collapse on regular content)
+- ❌ Message actions (copy, edit, delete, continue generation)
+- ❌ Token statistics display (tokens/sec, processing time)
+- ❌ Full GitHub Flavored Markdown with syntax highlighting
+- ❌ LaTeX/math rendering (KaTeX)
+- ❌ Auto-grow textarea (currently fixed height)
 
 ### 3. File Attachments
 **Status**: Core
@@ -89,19 +97,49 @@
 - Navigation shortcuts
 
 ### 6. Settings
-**Status**: Core
+**Status**: ✅ Implemented (2026-01-12)
 **Doc**: [06-settings.md](./06-settings.md)
 
-- Generation parameters (temperature, dynatemp, top_p, top_k, min_p, penalties)
-- Sampler configuration (order, XTC, typ_p)
-- Max tokens (-1 for infinite)
-- Theme selection (light/dark/system)
-- System message (global prompt)
-- Display options (stats, auto-scroll, markdown rendering)
-- API key (for --api-key mode)
-- Settings persistence (localStorage with auto-save)
-- Server defaults synchronization
-- Import/export settings as JSON
+**Architecture**:
+- **Storage**: Per-user IndexedDB persistence (Dexie userSettings table)
+- **Context**: SettingsProvider with userId-scoped isolation
+- **Theme**: ThemeProvider with system preference detection
+- **Integration**: Generation params applied to chat.completions.create API
+- **UI**: 4-tab dialog (General, Sampling, Penalties, Display)
+
+**Implemented Features**:
+- ✅ Generation parameters (10 params): temperature, top_p, top_k, min_p, typ_p, max_tokens, repeat_last_n, repeat_penalty, presence_penalty, frequency_penalty
+- ✅ Theme selection (light/dark/system) with real-time switching
+- ✅ System message injection into all conversations
+- ✅ Display options: disableAutoScroll, alwaysShowSidebarOnDesktop, autoShowSidebarOnNewChat
+- ✅ Auto-save on every setting change
+- ✅ Numeric validation with VALIDATION_RANGES (min/max/step)
+- ✅ Deep merge for partial updates
+- ✅ E2E test coverage (SettingsSection page object + settings.spec.ts)
+
+**Implementation Files**:
+- `src/components/settings/SettingsDialog.tsx` (4-tab dialog)
+- `src/components/settings/GeneralTab.tsx` (theme + systemMessage)
+- `src/components/settings/SamplingTab.tsx` (6 generation params with sliders)
+- `src/components/settings/PenaltiesTab.tsx` (4 penalty params with sliders)
+- `src/components/settings/DisplayTab.tsx` (3 boolean switches)
+- `src/components/theme-provider.tsx` (theme system with localStorage sync)
+- `src/context/SettingsContext.tsx` (provider with theme integration)
+- `src/hooks/useSettings.ts` (persistence + validation logic)
+- `src/lib/settings-defaults.ts` (DEFAULT_SETTINGS + VALIDATION_RANGES)
+- `src/db/schema.ts` (userSettings table: userId, settings JSON, lastModified)
+- `e2e/pages/SettingsSection.ts` (page object for E2E)
+- `e2e/settings.spec.ts` (5 E2E scenarios)
+
+**Deferred Features**:
+- ⏸️ Server defaults synchronization (requires backend /props endpoint enhancement)
+- ⏸️ Import/export settings as JSON
+- ⏸️ Reset buttons (resetAllToDefaults() exists but no UI)
+- ⏸️ "Custom" badges for overridden params
+- ⏸️ API key configuration
+- ⏸️ Advanced samplers (dynatemp, XTC, DRY)
+- ⏸️ Custom parameters JSON field
+- ⏸️ Additional display options (showMessageStats, keepStatsVisible, renderUserContentAsMarkdown)
 
 ### 7. Persistence
 **Status**: Core
@@ -157,6 +195,17 @@
 - Mobile-friendly interface
 - Desktop optimization
 - Adaptive layouts
+
+### Theme System
+**Status**: ✅ Implemented (2026-01-12)
+**Related**: [Settings](./06-settings.md), [Chat](./02-chat.md)
+
+- Theme provider with light/dark/system modes
+- System preference detection via `prefers-color-scheme` media query
+- localStorage persistence (key: `ui-theme`)
+- Real-time theme switching without reload
+- Theme variables applied throughout UI (bg-muted, text-foreground, text-muted-foreground, border-border, bg-primary, etc.)
+- Components updated: Header, MessageList, MessageBubble, ConversationItem, ConversationSidebar, SearchModal, InputArea
 
 ---
 

@@ -47,7 +47,10 @@ export function SearchModal({ isOpen, onClose, onResultClick, userId }: SearchMo
         </DialogHeader>
 
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             ref={inputRef}
             value={query}
@@ -60,9 +63,9 @@ export function SearchModal({ isOpen, onClose, onResultClick, userId }: SearchMo
 
         <ScrollArea className="max-h-96 mt-4">
           {isSearching ? (
-            <div className="text-center py-4 text-gray-500">Searching...</div>
+            <div className="text-center py-4 text-muted-foreground">Searching...</div>
           ) : results.length === 0 && query ? (
-            <div className="text-center py-4 text-gray-500">No results found</div>
+            <div className="text-center py-4 text-muted-foreground">No results found</div>
           ) : (
             <div className="space-y-4">
               {results.map(result => (
@@ -97,7 +100,7 @@ function SearchResultGroup({
       data-conversation-id={result.conversation.id}
     >
       <div className="flex items-center gap-2 mb-2">
-        <MessageSquare size={14} className="text-gray-600" />
+        <MessageSquare size={14} className="text-muted-foreground" />
         <span className="font-medium text-sm truncate">{result.conversation.name}</span>
       </div>
 
@@ -106,17 +109,17 @@ function SearchResultGroup({
           <button
             key={message.id}
             onClick={() => onMessageClick(result.conversation.id, message.id)}
-            className="w-full text-left p-2 rounded hover:bg-gray-100 flex items-start gap-2"
+            className="w-full text-left p-2 rounded hover:bg-accent flex items-start gap-2"
             data-testid="search-result-message"
             data-message-id={message.id}
           >
             {message.role === 'user' ? (
-              <User size={14} className="text-gray-500 mt-0.5 flex-shrink-0" />
+              <User size={14} className="text-muted-foreground mt-0.5 flex-shrink-0" />
             ) : (
-              <Bot size={14} className="text-gray-500 mt-0.5 flex-shrink-0" />
+              <Bot size={14} className="text-muted-foreground mt-0.5 flex-shrink-0" />
             )}
             <span
-              className="text-sm text-gray-700"
+              className="text-sm text-foreground"
               dangerouslySetInnerHTML={{ __html: highlightMatch(snippet, query) }}
             />
           </button>

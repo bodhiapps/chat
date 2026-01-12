@@ -1,9 +1,10 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Conversation, Message } from './schema';
+import type { Conversation, Message, UserSettings } from './schema';
 
 const db = new Dexie('BodhiChat') as Dexie & {
   conversations: EntityTable<Conversation, 'id'>;
   messages: EntityTable<Message, 'id'>;
+  userSettings: EntityTable<UserSettings, 'userId'>;
 };
 
 db.version(1).stores({
@@ -35,5 +36,11 @@ db.version(3)
     await tx.table('messages').clear();
     await tx.table('conversations').clear();
   });
+
+db.version(4).stores({
+  conversations: 'id, userId, lastModified, pinned, [userId+lastModified]',
+  messages: 'id, convId, createdAt',
+  userSettings: 'userId, lastModified',
+});
 
 export { db };

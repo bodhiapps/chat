@@ -49,7 +49,7 @@ export function InputArea() {
     <div className="w-full px-4 py-4">
       <div className="max-w-4xl mx-auto">
         <div
-          className="grid grid-cols-[auto_1fr_auto] grid-rows-[1fr_auto] gap-2 p-3 bg-white border border-gray-200 rounded-3xl shadow-sm"
+          className="grid grid-cols-[auto_1fr_auto] grid-rows-[1fr_auto] gap-2 p-3 bg-card border border-border rounded-3xl shadow-sm"
           data-testid="input-area"
           data-teststate={isDisabled ? 'disabled' : 'ready'}
         >

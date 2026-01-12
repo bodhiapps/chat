@@ -16,7 +16,7 @@ export default function StatusIndicator({ label, status, tooltip }: StatusIndica
         variant={status ? 'default' : 'destructive'}
         className={cn('size-2 p-0 rounded-full border-0', status ? 'bg-green-500' : 'bg-red-500')}
       />
-      <span className="text-xs text-gray-600">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 }

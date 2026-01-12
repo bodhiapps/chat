@@ -78,12 +78,12 @@ export function ConversationSidebar({
 
   return (
     <div
-      className="w-64 border-r bg-white flex flex-col"
+      className="w-64 border-r bg-card border-border flex flex-col"
       data-testid="conversation-sidebar"
       data-teststate={isLoading ? 'loading' : 'ready'}
       data-test-conversation-count={conversations.length}
     >
-      <div className="p-3 border-b space-y-2">
+      <div className="p-3 border-b border-border space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-sm">Conversations</h2>
           <div className="flex items-center gap-1">
@@ -126,7 +126,7 @@ export function ConversationSidebar({
         <div className="p-2 space-y-1">
           {!isAuthenticated ? (
             <div className="text-center py-8 px-4" data-testid="sidebar-login-prompt">
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Log in to save and access your chat history
               </p>
               <Button variant="outline" size="sm" onClick={onLogin} data-testid="btn-sidebar-login">
@@ -135,7 +135,7 @@ export function ConversationSidebar({
             </div>
           ) : conversations.length === 0 ? (
             <p
-              className="text-sm text-gray-400 text-center py-4"
+              className="text-sm text-muted-foreground text-center py-4"
               data-testid="sidebar-no-conversations"
             >
               No conversations yet
@@ -144,7 +144,7 @@ export function ConversationSidebar({
             <>
               {pinnedConversations.length > 0 && (
                 <>
-                  <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Pinned
                   </div>
                   {pinnedConversations.map(conv => (
@@ -157,7 +157,7 @@ export function ConversationSidebar({
                       onPin={() => handlePin(conv.id)}
                     />
                   ))}
-                  <div className="border-b border-gray-200 my-2" />
+                  <div className="border-b border-border my-2" />
                 </>
               )}
               {unpinnedConversations.map(conv => (

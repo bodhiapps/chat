@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBodhi } from '@bodhiapp/bodhi-js-react';
+import { useSettingsContext } from './useSettingsContext';
 
 export interface ChatMessage {
   id?: string;
@@ -13,6 +14,7 @@ export interface ChatMessage {
 
 export function useChat() {
   const { client, isAuthenticated, isReady } = useBodhi();
+  const { settings } = useSettingsContext();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [selectedModel, setSelectedModel] = useState('');
@@ -101,10 +103,26 @@ export function useChat() {
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
       try {
+        const apiMessages = [
+          ...(settings.general.systemMessage
+            ? [{ role: 'system' as const, content: settings.general.systemMessage }]
+            : []),
+          ...conversationMessages,
+        ];
+
         const stream = client.chat.completions.create({
           model: selectedModel,
-          messages: conversationMessages,
+          messages: apiMessages,
           stream: true,
+          temperature: settings.generation.temperature,
+          top_p: settings.generation.top_p,
+          top_k: settings.generation.top_k,
+          min_p: settings.generation.min_p,
+          max_tokens:
+            settings.generation.max_tokens === -1 ? undefined : settings.generation.max_tokens,
+          repeat_penalty: settings.generation.repeat_penalty,
+          presence_penalty: settings.generation.presence_penalty,
+          frequency_penalty: settings.generation.frequency_penalty,
         });
 
         for await (const chunk of stream) {
@@ -159,7 +177,7 @@ export function useChat() {
         abortControllerRef.current = null;
       }
     },
-    [client, selectedModel, messages]
+    [client, selectedModel, messages, settings]
   );
 
   const retryMessage = useCallback(

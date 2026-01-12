@@ -3,7 +3,7 @@
 > **Source Reference Base Path**:
 > `$webui-folder = /Users/amir36/Documents/workspace/src/github.com/ggml-org/llama.cpp/tools/server/webui`
 
-> Priority: 2 | Status: Core Feature | **Implementation: 🔄 Basic**
+> Priority: 2 | Status: Core Feature | **Implementation: 🔄 Partial**
 
 ---
 
@@ -13,7 +13,13 @@ Chat interface enables real-time streaming conversations with AI models, support
 
 **Related docs**: [API Reference](./api-reference.md), [Settings](./06-settings.md), [Attachments](./03-attachments.md), [Model Selection](./01-model-selection.md)
 
-**Current Status**: Streaming + retry + regenerate working; missing: markdown, syntax highlighting, stats, message actions
+**Current Status**:
+- ✅ Streaming SSE, retry, regenerate, abort
+- ✅ Theme support (light/dark/system)
+- ✅ Auto-scroll with disable setting
+- ✅ Generation parameters from settings applied to API
+- ✅ System message support
+- ❌ Missing: markdown rendering, syntax highlighting, token stats, message actions (copy/edit/delete), reasoning blocks
 
 ---
 
@@ -43,10 +49,17 @@ Chat interface enables real-time streaming conversations with AI models, support
 
 - ❌ **As a user**, I can see reasoning/thinking content separately so that I understand the AI's thought process
 
-- 🔄 **As a user**, the chat auto-scrolls during streaming so that I always see the latest content
+- ✅ **As a user**, the chat auto-scrolls during streaming so that I always see the latest content
   - ✅ Auto-scroll during generation
-  - 🔄 Manual scroll disables auto-scroll - _Basic detection, no 10px threshold_
-  - 🔄 Re-enable by scrolling to bottom
+  - ✅ Manual scroll disables auto-scroll (50px threshold)
+  - ✅ Re-enable by scrolling to bottom
+  - ✅ Settings option to disable auto-scroll entirely
+
+- ✅ **As a user**, I can use light/dark/system theme so that the interface matches my preference
+  - ✅ Theme selection in settings (General tab)
+  - ✅ System preference detection
+  - ✅ Real-time theme switching
+  - ✅ Theme variables throughout UI (bg-muted, text-foreground, etc.)
 
 - **As a user**, I can scroll up to read earlier messages without disrupting streaming
 

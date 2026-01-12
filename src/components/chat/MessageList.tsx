@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChatContext } from '@/context/ChatContext';
+import { useSettingsContext } from '@/hooks/useSettingsContext';
 import type { ChatMessage } from '@/hooks/useChat';
 import { MessageBubble } from './MessageBubble';
 
@@ -20,6 +21,7 @@ export function MessageList({
   onRetryMessage,
 }: MessageListProps) {
   const { highlightedMessageId } = useChatContext();
+  const { settings } = useSettingsContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const isUserScrolledUpRef = useRef(false);
@@ -52,12 +54,12 @@ export function MessageList({
   }, [messages]);
 
   useEffect(() => {
-    if (!isUserScrolledUpRef.current) {
+    if (!settings.display.disableAutoScroll && !isUserScrolledUpRef.current) {
       messagesEndRef.current?.scrollIntoView({
         behavior: isStreaming ? 'instant' : 'smooth',
       });
     }
-  }, [messages, isStreaming]);
+  }, [messages, isStreaming, settings.display.disableAutoScroll]);
 
   useEffect(() => {
     if (highlightedMessageId) {
@@ -84,10 +86,12 @@ export function MessageList({
         }
       }}
     >
-      <div className="p-4 bg-gray-50 min-h-full">
+      <div className="p-4 bg-muted min-h-full">
         <div className="max-w-4xl mx-auto">
           {messages.length === 0 ? (
-            <p className="text-center text-gray-400 mt-8">No messages yet. Start a conversation!</p>
+            <p className="text-center text-muted-foreground mt-8">
+              No messages yet. Start a conversation!
+            </p>
           ) : (
             <>
               {messages.map((msg, index) => (

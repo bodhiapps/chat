@@ -19,8 +19,8 @@ export function ConversationItem({
 }: ConversationItemProps) {
   return (
     <div
-      className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 ${
-        isActive ? 'bg-gray-200' : ''
+      className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-accent ${
+        isActive ? 'bg-accent' : ''
       }`}
       onClick={onClick}
       data-testid="conversation-item"
@@ -28,7 +28,7 @@ export function ConversationItem({
       data-conversation-id={conversation.id}
       data-test-chat-id={conversation.id}
     >
-      <MessageSquare size={16} className="flex-shrink-0 text-gray-600" />
+      <MessageSquare size={16} className="flex-shrink-0 text-muted-foreground" />
       <span className="flex-1 text-sm truncate">{conversation.name}</span>
       <button
         onClick={e => {
@@ -36,7 +36,7 @@ export function ConversationItem({
           onPin();
         }}
         className={cn(
-          'p-1 hover:bg-gray-200 rounded',
+          'p-1 hover:bg-accent rounded',
           conversation.pinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         )}
         title={conversation.pinned ? 'Unpin conversation' : 'Pin conversation'}
@@ -44,7 +44,9 @@ export function ConversationItem({
       >
         <Pin
           size={14}
-          className={cn(conversation.pinned ? 'text-blue-600 fill-blue-600' : 'text-gray-600')}
+          className={cn(
+            conversation.pinned ? 'text-blue-600 fill-blue-600' : 'text-muted-foreground'
+          )}
         />
       </button>
       <button
@@ -52,7 +54,7 @@ export function ConversationItem({
           e.stopPropagation();
           onDelete();
         }}
-        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded"
+        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-accent rounded"
         title="Delete conversation"
         data-testid="btn-delete-conversation"
       >
