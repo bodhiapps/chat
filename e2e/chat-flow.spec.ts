@@ -113,5 +113,108 @@ test.describe('Core Chat Flow - Direct Mode', () => {
     const remainingTitles = await chatPage.getConversationTitles();
     expect(remainingTitles[0]).toContain('Answer in max 4 words');
     expect(remainingTitles.length).toBe(1);
+
+    await test.step('Pin/Unpin conversations', async () => {
+      await chatPage.clickNewConversation();
+
+      const pinTestMessage = 'Answer in 1 word: What color is the sky?';
+      await chatPage.sendMessage(pinTestMessage);
+      await chatPage.verifyLastUserMessage(pinTestMessage);
+
+      const response2 = await chatPage.waitForResponse();
+      expect(response2.toLowerCase()).toMatch(/blue|sky/);
+
+      const convCountBefore = await chatPage.getConversationCount();
+      expect(convCountBefore).toBe(2);
+
+      const pinnedCountBefore = await chatPage.getPinnedCount();
+      expect(pinnedCountBefore).toBe(0);
+
+      await chatPage.pinConversationByIndex(0);
+
+      const isPinned = await chatPage.isConversationPinned(0);
+      expect(isPinned).toBe(true);
+
+      const pinnedCountAfter = await chatPage.getPinnedCount();
+      expect(pinnedCountAfter).toBe(1);
+
+      const titles = await chatPage.getConversationTitles();
+      expect(titles[0]).toContain('color');
+
+      await chatPage.unpinConversationByIndex(0);
+      const isPinnedAfterUnpin = await chatPage.isConversationPinned(0);
+      expect(isPinnedAfterUnpin).toBe(false);
+
+      const pinnedCountFinal = await chatPage.getPinnedCount();
+      expect(pinnedCountFinal).toBe(0);
+    });
+
+    await test.step('Search conversations', async () => {
+      await chatPage.clickNewConversation();
+
+      const searchTestMessage = 'Answer in 1 word: What fruit is yellow and curved?';
+      await chatPage.sendMessage(searchTestMessage);
+      await chatPage.verifyLastUserMessage(searchTestMessage);
+
+      const response3 = await chatPage.waitForResponse();
+      expect(response3.toLowerCase()).toMatch(/banana/);
+
+      await chatPage.openSearchModal();
+
+      await chatPage.searchConversations('Monday');
+
+      const resultCount = await chatPage.getSearchResultCount();
+      expect(resultCount).toBeGreaterThan(0);
+
+      await chatPage.clickSearchResult(0, 0);
+
+      await chatPage.verifyLastUserMessage('Monday');
+
+      await chatPage.openSearchModal();
+      await chatPage.searchConversations('xyznonexistent123');
+
+      const noResultCount = await chatPage.getSearchResultCount();
+      expect(noResultCount).toBe(0);
+
+      await chatPage.closeSearchModal();
+    });
+
+    await test.step('Logout clears state and shows login prompt', async () => {
+      const messageCountBefore = await chatPage.getMessageCount();
+      expect(messageCountBefore).toBeGreaterThan(0);
+
+      await chatPage.clickLogout();
+      await chatPage.waitForLoggedOut();
+
+      const messageCountAfterLogout = await chatPage.getMessageCount();
+      expect(messageCountAfterLogout).toBe(0);
+
+      const loginPromptVisible = await chatPage.isSidebarLoginPromptVisible();
+      expect(loginPromptVisible).toBe(true);
+
+      const searchDisabled = await chatPage.isSearchButtonDisabled();
+      expect(searchDisabled).toBe(true);
+
+      const newChatDisabled = await chatPage.isNewChatButtonDisabled();
+      expect(newChatDisabled).toBe(true);
+    });
+
+    await test.step('Re-login auto-loads last conversation', async () => {
+      await chatPage.clickLoginAndWaitForRedirect();
+      await chatPage.waitForAuthenticated();
+
+      const convCount = await chatPage.getConversationCount();
+      expect(convCount).toBeGreaterThan(0);
+
+      await chatPage.waitForConversationLoaded();
+      const messageCountAfterRelogin = await chatPage.getMessageCount();
+      expect(messageCountAfterRelogin).toBeGreaterThan(0);
+
+      const loginPromptGone = await chatPage.isSidebarLoginPromptVisible();
+      expect(loginPromptGone).toBe(false);
+
+      const searchEnabled = await chatPage.isSearchButtonDisabled();
+      expect(searchEnabled).toBe(false);
+    });
   });
 });

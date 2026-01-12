@@ -18,10 +18,7 @@ export class SetupModalHelper {
   async waitForModalReady(): Promise<void> {
     await this.iframeLocator
       .locator('[data-testid="loading-indicator"]')
-      .waitFor({ state: 'hidden' })
-      .catch(() => {
-        console.log('[setup-modal] No loading indicator found, continuing...');
-      });
+      .waitFor({ state: 'hidden' });
   }
 
   async waitForServerSetupStep(): Promise<void> {

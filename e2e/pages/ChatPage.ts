@@ -1,7 +1,7 @@
 import { Page } from '@playwright/test';
 
 export class ChatPage {
-  constructor(private page: Page) {}
+  constructor(private page: Page) { }
 
   selectors = {
     appTitle: '[data-testid="app-title"]',
@@ -25,6 +25,13 @@ export class ChatPage {
     hideSidebarButton: '[data-testid="btn-hide-sidebar"]',
     conversationItem: '[data-testid="conversation-item"]',
     deleteConversationButton: '[data-testid="btn-delete-conversation"]',
+    pinConversationButton: '[data-testid="btn-pin-conversation"]',
+    searchConversationsButton: '[data-testid="btn-search-conversations"]',
+    searchModal: '[data-testid="search-modal"]',
+    searchInput: '[data-testid="search-input"]',
+    searchResultGroup: '[data-testid="search-result-group"]',
+    searchResultMessage: '[data-testid="search-result-message"]',
+    sidebarLoginPrompt: '[data-testid="sidebar-login-prompt"]',
   };
 
   async waitForPageLoad(): Promise<void> {
@@ -57,7 +64,6 @@ export class ChatPage {
     await this.page.fill('#username', username);
     await this.page.fill('#password', password);
     await this.page.click('#kc-login');
-
     await this.page.waitForURL(/.*\/chat\//);
   }
 
@@ -92,19 +98,12 @@ export class ChatPage {
       .locator(this.selectors.chatArea + '[data-teststate="idle"]')
       .waitFor({ state: 'visible', timeout: 120000 });
     const messageCount = await this.getMessageCount();
-    if (messageCount === 0) {
-      throw new Error('No messages found');
-    }
     const lastUserIndex = messageCount - 2;
     const lastUserMessage = this.page.locator(
       `${this.selectors.userMessage}[data-test-index="${lastUserIndex}"]`
     );
     await lastUserMessage.scrollIntoViewIfNeeded();
-    await lastUserMessage.waitFor({ state: 'visible' });
-    const text = await lastUserMessage.textContent();
-    if (!text || !text.includes(expectedText)) {
-      throw new Error(`Expected last user message to contain "${expectedText}", but got "${text}"`);
-    }
+    await lastUserMessage.getByText(expectedText, { exact: false }).waitFor({ state: 'visible' });
   }
 
   async verifyLastAssistantMessage(expectedText: string): Promise<void> {
@@ -112,21 +111,12 @@ export class ChatPage {
       .locator(this.selectors.chatArea + '[data-teststate="idle"]')
       .waitFor({ state: 'visible', timeout: 120000 });
     const messageCount = await this.getMessageCount();
-    if (messageCount === 0) {
-      throw new Error('No messages found');
-    }
     const lastAssistantIndex = messageCount - 1;
     const lastAssistantMessage = this.page.locator(
       `${this.selectors.assistantMessage}[data-test-index="${lastAssistantIndex}"]`
     );
     await lastAssistantMessage.scrollIntoViewIfNeeded();
-    await lastAssistantMessage.waitFor({ state: 'visible' });
-    const text = await lastAssistantMessage.textContent();
-    if (!text || !text.toLowerCase().includes(expectedText.toLowerCase())) {
-      throw new Error(
-        `Expected last assistant message to contain "${expectedText}", but got "${text}"`
-      );
-    }
+    await lastAssistantMessage.getByText(new RegExp(expectedText, 'i')).waitFor({ state: 'visible' });
   }
 
   async waitForResponse(timeout = 120000): Promise<string> {
@@ -184,15 +174,10 @@ export class ChatPage {
     await this.page
       .locator('[data-testid="chat-container"][data-teststate="ready"]')
       .waitFor({ state: 'visible' });
-    if (expectedChatId) {
-      await this.page
-        .locator(`[data-testid="chat-area"][data-test-chat-id="${expectedChatId}"]`)
-        .waitFor({ state: 'visible' });
-    } else {
-      await this.page
-        .locator('[data-testid="chat-area"]:not([data-test-chat-id=""])')
-        .waitFor({ state: 'visible' });
-    }
+    const selector = expectedChatId
+      ? `[data-testid="chat-area"][data-test-chat-id="${expectedChatId}"]`
+      : '[data-testid="chat-area"]:not([data-test-chat-id=""])';
+    await this.page.locator(selector).waitFor({ state: 'visible' });
   }
 
   async deleteConversationByIndex(index: number): Promise<void> {
@@ -211,5 +196,86 @@ export class ChatPage {
     const userCount = await this.page.locator(this.selectors.userMessage).count();
     const assistantCount = await this.page.locator(this.selectors.assistantMessage).count();
     return userCount + assistantCount;
+  }
+
+  async clickLogout(): Promise<void> {
+    await this.page.locator(this.selectors.logoutButton).click();
+  }
+
+  async waitForLoggedOut(): Promise<void> {
+    await this.page
+      .locator(`${this.selectors.authSection}[data-teststate="unauthenticated"]`)
+      .waitFor();
+  }
+
+  async pinConversationByIndex(index: number): Promise<void> {
+    const item = this.page.locator(this.selectors.conversationItem).nth(index);
+    await item.hover();
+    await item.locator(this.selectors.pinConversationButton).click();
+    await this.page
+      .locator(`${this.selectors.conversationItem}[data-teststate="pinned"]`)
+      .waitFor({ state: 'visible' });
+  }
+
+  async unpinConversationByIndex(index: number): Promise<void> {
+    const item = this.page.locator(this.selectors.conversationItem).nth(index);
+    await item.hover();
+    await item.locator(this.selectors.pinConversationButton).click();
+    await this.page
+      .locator(`${this.selectors.conversationItem}[data-teststate="pinned"]`)
+      .waitFor({ state: 'hidden' });
+  }
+
+  async getPinnedCount(): Promise<number> {
+    const scrollArea = this.page.locator('div[data-test-pinned-count]');
+    const count = await scrollArea.getAttribute('data-test-pinned-count');
+    return parseInt(count || '0', 10);
+  }
+
+  async isConversationPinned(index: number): Promise<boolean> {
+    const item = this.page.locator(this.selectors.conversationItem).nth(index);
+    const state = await item.getAttribute('data-teststate');
+    return state === 'pinned';
+  }
+
+  async openSearchModal(): Promise<void> {
+    await this.page.locator(this.selectors.searchConversationsButton).click();
+    await this.page.locator(this.selectors.searchModal).waitFor({ state: 'visible' });
+  }
+
+  async searchConversations(query: string): Promise<void> {
+    await this.page.locator(this.selectors.searchInput).fill(query);
+    await this.page.waitForTimeout(350);
+  }
+
+  async getSearchResultCount(): Promise<number> {
+    return await this.page.locator(this.selectors.searchResultGroup).count();
+  }
+
+  async clickSearchResult(groupIndex: number, messageIndex: number): Promise<string> {
+    const group = this.page.locator(this.selectors.searchResultGroup).nth(groupIndex);
+    const conversationId = (await group.getAttribute('data-conversation-id')) || '';
+    const message = group.locator(this.selectors.searchResultMessage).nth(messageIndex);
+    await message.click();
+    await this.page.locator(this.selectors.searchModal).waitFor({ state: 'hidden' });
+    await this.waitForConversationLoaded(conversationId);
+    return conversationId;
+  }
+
+  async closeSearchModal(): Promise<void> {
+    await this.page.keyboard.press('Escape');
+    await this.page.locator(this.selectors.searchModal).waitFor({ state: 'hidden' });
+  }
+
+  async isSidebarLoginPromptVisible(): Promise<boolean> {
+    return await this.page.locator(this.selectors.sidebarLoginPrompt).isVisible();
+  }
+
+  async isSearchButtonDisabled(): Promise<boolean> {
+    return await this.page.locator(this.selectors.searchConversationsButton).isDisabled();
+  }
+
+  async isNewChatButtonDisabled(): Promise<boolean> {
+    return await this.page.locator(this.selectors.newConversationButton).isDisabled();
   }
 }
