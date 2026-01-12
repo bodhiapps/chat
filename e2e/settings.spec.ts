@@ -116,7 +116,9 @@ test.describe('Settings Dialog', () => {
 
       await chatPage.openSettings();
       await chatPage.settingsSection.selectTab('general');
-      await chatPage.settingsSection.general.setSystemMessage('always start your reply with Hello London,');
+      await chatPage.settingsSection.general.setSystemMessage(
+        'always start your reply with Hello London,'
+      );
       await chatPage.settingsSection.close();
 
       await chatPage.clickNewConversation();
