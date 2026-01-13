@@ -27,6 +27,9 @@ interface ChatContextValue {
   isLoadingConversation: boolean;
   highlightedMessageId: string | null;
   scrollToMessage: (messageId: string) => void;
+  editMessage: (messageId: string, newContent: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
+  getMessageCascadeCount: (messageId: string) => Promise<number>;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -110,6 +113,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const handleSendMessage = useCallback(
     async (prompt: string) => {
+      let userMessageId: string | undefined;
+
       // Only persist if authenticated
       if (userId) {
         try {
@@ -117,13 +122,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             const title = persistence.generateConversationTitle(prompt);
             const newId = await persistence.createConversation(title);
             setCurrentConversationId(newId);
-            await persistence.saveMessage(
+            userMessageId = await persistence.saveMessage(
               newId,
               { role: 'user', content: prompt },
               chat.selectedModel
             );
           } else if (currentConversationId) {
-            await persistence.saveMessage(
+            userMessageId = await persistence.saveMessage(
               currentConversationId,
               { role: 'user', content: prompt },
               chat.selectedModel
@@ -137,6 +142,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
 
       await chat.sendMessage(prompt);
+
+      // Update the user message with the persisted ID
+      if (userMessageId) {
+        chat.setMessages(prev =>
+          prev.map((msg, index) => {
+            // Find the user message we just added (second to last, before assistant)
+            if (
+              index === prev.length - 2 &&
+              msg.role === 'user' &&
+              msg.content === prompt &&
+              !msg.id
+            ) {
+              return { ...msg, id: userMessageId };
+            }
+            return msg;
+          })
+        );
+      }
     },
     [chat, currentConversationId, persistence, userId]
   );
@@ -145,6 +168,46 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     chat.clearMessages();
     setCurrentConversationId(null);
   }, [chat]);
+
+  const editMessage = useCallback(
+    async (messageId: string, newContent: string) => {
+      if (!currentConversationId) return;
+
+      // Update in database
+      await persistence.updateMessage(currentConversationId, messageId, newContent);
+
+      // Update in local state
+      chat.setMessages(prev =>
+        prev.map(msg => (msg.id === messageId ? { ...msg, content: newContent } : msg))
+      );
+    },
+    [currentConversationId, persistence, chat]
+  );
+
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!currentConversationId) return;
+
+      // Find the index of the message to delete
+      const messageIndex = chat.messages.findIndex(msg => msg.id === messageId);
+      if (messageIndex === -1) return;
+
+      // Delete from database (cascade)
+      await persistence.deleteMessageCascade(currentConversationId, messageId);
+
+      // Update local state - remove this message and all following
+      chat.setMessages(prev => prev.slice(0, messageIndex));
+    },
+    [currentConversationId, persistence, chat]
+  );
+
+  const getMessageCascadeCount = useCallback(
+    async (messageId: string): Promise<number> => {
+      if (!currentConversationId) return 0;
+      return persistence.getMessageCascadeCount(currentConversationId, messageId);
+    },
+    [currentConversationId, persistence]
+  );
 
   const value: ChatContextValue = {
     ...chat,
@@ -155,6 +218,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     isLoadingConversation,
     highlightedMessageId,
     scrollToMessage,
+    editMessage,
+    deleteMessage,
+    getMessageCascadeCount,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -1,10 +1,14 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { PanelLeftClose, PanelLeft, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePersistence } from '@/hooks/usePersistence';
 import { ConversationItem } from './ConversationItem';
 import type { Conversation } from '@/db/schema';
+
+function getPlatformModifierKey(): string {
+  return typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl';
+}
 
 interface ConversationSidebarProps {
   isCollapsed: boolean;
@@ -32,6 +36,7 @@ export function ConversationSidebar({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { listConversations, deleteConversation, togglePin } = usePersistence(userId);
+  const modKey = useMemo(() => getPlatformModifierKey(), []);
 
   const loadConversations = useCallback(async () => {
     setIsLoading(true);
@@ -91,7 +96,7 @@ export function ConversationSidebar({
               variant="ghost"
               size="icon"
               onClick={onSearchClick}
-              title="Search conversations"
+              title={`Search conversations (${modKey}+K)`}
               disabled={!isAuthenticated}
               data-testid="btn-search-conversations"
             >
@@ -116,6 +121,7 @@ export function ConversationSidebar({
           size="sm"
           disabled={!isAuthenticated}
           data-testid="btn-new-conversation"
+          title={`New chat (${modKey}+Shift+O)`}
         >
           <Plus size={16} />
           New chat

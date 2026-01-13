@@ -4,6 +4,7 @@ import { useChatContext } from '@/context/ChatContext';
 import { useSettingsContext } from '@/hooks/useSettingsContext';
 import type { ChatMessage } from '@/hooks/useChat';
 import { MessageBubble } from './MessageBubble';
+import { EmptyConversation } from './EmptyConversation';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -11,6 +12,9 @@ interface MessageListProps {
   error?: string | null;
   currentConversationId?: string | null;
   onRetryMessage?: (index: number) => void;
+  onEditMessage?: (messageId: string, newContent: string) => void;
+  onDeleteMessage?: (messageId: string) => void;
+  onGetCascadeCount?: (messageId: string) => Promise<number>;
 }
 
 export function MessageList({
@@ -19,6 +23,9 @@ export function MessageList({
   error,
   currentConversationId,
   onRetryMessage,
+  onEditMessage,
+  onDeleteMessage,
+  onGetCascadeCount,
 }: MessageListProps) {
   const { highlightedMessageId } = useChatContext();
   const { settings } = useSettingsContext();
@@ -68,9 +75,13 @@ export function MessageList({
     }
   }, [highlightedMessageId]);
 
+  if (messages.length === 0) {
+    return <EmptyConversation currentConversationId={currentConversationId} />;
+  }
+
   return (
     <ScrollArea
-      className="flex-1 overflow-hidden"
+      className="flex-1 overflow-hidden bg-muted"
       data-testid="chat-area"
       data-teststate={error ? 'error' : isStreaming ? 'streaming' : 'idle'}
       data-test-chat-id={currentConversationId || ''}
@@ -86,40 +97,41 @@ export function MessageList({
         }
       }}
     >
-      <div className="p-4 bg-muted min-h-full">
+      <div className="p-4 min-h-full">
         <div className="max-w-4xl mx-auto">
-          {messages.length === 0 ? (
-            <p className="text-center text-muted-foreground mt-8">
-              No messages yet. Start a conversation!
-            </p>
-          ) : (
-            <>
-              {messages.map((msg, index) => (
-                <MessageBubble
-                  key={index}
-                  message={msg}
-                  index={index}
-                  messageId={msg.id}
-                  isHighlighted={msg.id === highlightedMessageId}
-                  isStreaming={isStreaming}
-                  isLastMessage={index === messages.length - 1}
-                  onRetry={onRetryMessage ? () => onRetryMessage(index) : undefined}
-                />
-              ))}
-              {isStreaming && (
-                <div data-testid="streaming-indicator" className="flex justify-start mb-4">
-                  <div className="bg-gray-200 px-4 py-2 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse" />
-                      <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse delay-100" />
-                      <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse delay-200" />
-                    </div>
-                  </div>
+          {messages.map((msg, index) => (
+            <MessageBubble
+              key={msg.id || index}
+              message={msg}
+              index={index}
+              messageId={msg.id}
+              isHighlighted={msg.id === highlightedMessageId}
+              isStreaming={isStreaming}
+              isLastMessage={index === messages.length - 1}
+              onRetry={onRetryMessage ? () => onRetryMessage(index) : undefined}
+              onEdit={
+                msg.id && onEditMessage
+                  ? (newContent: string) => onEditMessage(msg.id!, newContent)
+                  : undefined
+              }
+              onDelete={msg.id && onDeleteMessage ? () => onDeleteMessage(msg.id!) : undefined}
+              onGetCascadeCount={
+                msg.id && onGetCascadeCount ? () => onGetCascadeCount(msg.id!) : undefined
+              }
+            />
+          ))}
+          {isStreaming && (
+            <div data-testid="streaming-indicator" className="flex justify-start mb-4">
+              <div className="bg-muted px-4 py-2 rounded-lg border border-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse delay-100" />
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse delay-200" />
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </>
+              </div>
+            </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
       </div>
     </ScrollArea>

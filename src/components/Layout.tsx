@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useBodhi } from '@bodhiapp/bodhi-js-react';
 import Header from './Header';
 import { ChatContainer } from './chat/ChatContainer';
 import { ConversationSidebar } from './chat/ConversationSidebar';
 import { SearchModal } from './chat/SearchModal';
+import { ShortcutGuideModal } from './chat/ShortcutGuideModal';
 import { useSidebar } from '@/hooks/useSidebar';
 import { useChatContext } from '@/context/ChatContext';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export default function Layout() {
   const { auth, isAuthenticated, login } = useBodhi();
@@ -15,6 +17,47 @@ export default function Layout() {
   const { currentConversationId, loadConversation, startNewConversation, scrollToMessage } =
     useChatContext();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isShortcutGuideOpen, setIsShortcutGuideOpen] = useState(false);
+
+  const handleOpenSearch = useCallback(() => {
+    if (isAuthenticated) {
+      setIsSearchOpen(true);
+    }
+  }, [isAuthenticated]);
+
+  const handleCloseSearch = useCallback(() => {
+    setIsSearchOpen(false);
+  }, []);
+
+  const handleShowShortcuts = useCallback(() => {
+    setIsShortcutGuideOpen(true);
+  }, []);
+
+  const handleCloseShortcuts = useCallback(() => {
+    setIsShortcutGuideOpen(false);
+  }, []);
+
+  const handleFocusInput = useCallback(() => {
+    const input = document.querySelector('[data-testid="chat-input"]') as HTMLTextAreaElement;
+    input?.focus();
+  }, []);
+
+  const handleEscape = useCallback(() => {
+    // Close shortcut guide first if open, otherwise search
+    if (isShortcutGuideOpen) {
+      setIsShortcutGuideOpen(false);
+    } else if (isSearchOpen) {
+      setIsSearchOpen(false);
+    }
+  }, [isShortcutGuideOpen, isSearchOpen]);
+
+  useKeyboardShortcuts({
+    onOpenSearch: handleOpenSearch,
+    onNewConversation: startNewConversation,
+    onFocusInput: handleFocusInput,
+    onShowShortcuts: handleShowShortcuts,
+    onEscape: handleEscape,
+  });
 
   const handleSearchResultClick = async (conversationId: string, messageId: string) => {
     await loadConversation(conversationId);
@@ -40,10 +83,11 @@ export default function Layout() {
       </div>
       <SearchModal
         isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
+        onClose={handleCloseSearch}
         onResultClick={handleSearchResultClick}
         userId={userId}
       />
+      <ShortcutGuideModal isOpen={isShortcutGuideOpen} onClose={handleCloseShortcuts} />
     </div>
   );
 }

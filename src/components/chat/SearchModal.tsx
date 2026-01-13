@@ -1,10 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { Search, MessageSquare, User, Bot } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSearch } from '@/hooks/useSearch';
 import type { SearchResult } from '@/hooks/useSearch';
+
+function getPlatformModifierKey(): string {
+  return typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl';
+}
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -17,6 +21,7 @@ export function SearchModal({ isOpen, onClose, onResultClick, userId }: SearchMo
   const { query, setQuery, results, isSearching, search, clearResults } = useSearch(userId);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<number | undefined>(undefined);
+  const modKey = useMemo(() => getPlatformModifierKey(), []);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,7 +60,7 @@ export function SearchModal({ isOpen, onClose, onResultClick, userId }: SearchMo
             ref={inputRef}
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
-            placeholder="Search all messages..."
+            placeholder={`Search all messages... (${modKey}+K)`}
             className="pl-9"
             data-testid="search-input"
           />
@@ -132,7 +137,7 @@ function SearchResultGroup({
 function highlightMatch(text: string, query: string): string {
   if (!query) return text;
   const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
-  return text.replace(regex, '<mark class="bg-yellow-200 rounded px-0.5">$1</mark>');
+  return text.replace(regex, '<mark class="bg-primary/20 rounded px-0.5">$1</mark>');
 }
 
 function escapeRegex(str: string): string {

@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import { SettingsSection } from './SettingsSection';
 
 export class ChatPage {
@@ -48,6 +48,22 @@ export class ChatPage {
     thinkingBlock: '[data-testid="thinking-block"]',
     thinkingBlockToggle: '[data-testid="thinking-block-toggle"]',
     thinkingBlockContent: '[data-testid="thinking-block-content"]',
+    // Message action buttons
+    messageActions: '[data-testid="message-actions"]',
+    copyMessageButton: '[data-testid="btn-copy-message"]',
+    editMessageButton: '[data-testid="btn-edit-message"]',
+    deleteMessageButton: '[data-testid="btn-delete-message"]',
+    copySuccessIcon: '[data-testid="copy-success-icon"]',
+    // Edit mode
+    editTextarea: '[data-testid="edit-message-textarea"]',
+    // Delete confirmation
+    deleteMessageDialog: '[data-testid="delete-message-dialog"]',
+    deleteConfirmButton: '[data-testid="btn-confirm-delete"]',
+    deleteCancelButton: '[data-testid="btn-cancel-delete"]',
+    deleteCascadeCount: '[data-testid="delete-cascade-count"]',
+    // Mobile kebab menu
+    messageKebabMenu: '[data-testid="message-kebab-menu"]',
+    messageActionsDropdown: '[data-testid="message-actions-dropdown"]',
   };
 
   async waitForPageLoad(): Promise<void> {
@@ -389,5 +405,173 @@ export class ChatPage {
 
   async isThinkingBlockExpanded(): Promise<boolean> {
     return await this.page.locator(this.selectors.thinkingBlockContent).isVisible();
+  }
+
+  // ===== Message Action Methods =====
+
+  async hoverMessage(index: number): Promise<void> {
+    // Need to hover the grandparent container that has the hover handlers
+    // Structure: outer div (with hover) > inner div > message bubble
+    const message = this.page.locator(
+      `${this.selectors.userMessage}[data-test-index="${index}"], ${this.selectors.assistantMessage}[data-test-index="${index}"]`
+    );
+    // Get the grandparent element that has the hover handlers (go up 2 levels)
+    const container = message.locator('..').locator('..');
+    await container.hover();
+    // Wait for actions container to become visible (opacity change)
+    const actionsContainer = this.page.locator(`${this.selectors.messageActions}`);
+    await actionsContainer.first().waitFor({ state: 'visible' });
+  }
+
+  async clickCopyMessage(index: number): Promise<void> {
+    await this.hoverMessage(index);
+    const copyBtn = this.page.locator(
+      `${this.selectors.copyMessageButton}[data-message-index="${index}"]`
+    );
+    await copyBtn.click();
+  }
+
+  async verifyCopySuccess(index: number): Promise<boolean> {
+    const copyBtn = this.page.locator(
+      `${this.selectors.copyMessageButton}[data-message-index="${index}"][data-copy-state="copied"]`
+    );
+    // Wait for copy state to change to 'copied'
+    try {
+      await copyBtn.waitFor({ state: 'visible', timeout: 2000 });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getUserMessageContent(index: number): Promise<string> {
+    const message = this.page.locator(`${this.selectors.userMessage}[data-test-index="${index}"]`);
+    return (await message.textContent()) || '';
+  }
+
+  async getAssistantMessageContent(index: number): Promise<string> {
+    const message = this.page.locator(
+      `${this.selectors.assistantMessage}[data-test-index="${index}"]`
+    );
+    return (await message.textContent()) || '';
+  }
+
+  /**
+   * Assert user message contains text using Playwright's auto-retry mechanism.
+   * This waits for the content to update with built-in timeout.
+   */
+  async expectUserMessageContains(index: number, text: string): Promise<void> {
+    const message = this.page.locator(`${this.selectors.userMessage}[data-test-index="${index}"]`);
+    await expect(message).toContainText(text);
+  }
+
+  /**
+   * Assert assistant message contains text using Playwright's auto-retry mechanism.
+   */
+  async expectAssistantMessageContains(index: number, text: string): Promise<void> {
+    const message = this.page.locator(
+      `${this.selectors.assistantMessage}[data-test-index="${index}"]`
+    );
+    await expect(message).toContainText(text);
+  }
+
+  // ===== Edit Methods =====
+
+  async startEditMessage(index: number): Promise<void> {
+    await this.hoverMessage(index);
+    const editBtn = this.page.locator(
+      `${this.selectors.editMessageButton}[data-message-index="${index}"]`
+    );
+    await editBtn.click();
+    // Wait for edit mode to be active (data-teststate="editing")
+    await this.page
+      .locator(
+        `${this.selectors.userMessage}[data-test-index="${index}"][data-teststate="editing"]`
+      )
+      .waitFor({ state: 'visible' });
+    await this.page.locator(this.selectors.editTextarea).waitFor({ state: 'visible' });
+  }
+
+  async fillEditTextarea(content: string): Promise<void> {
+    const textarea = this.page.locator(this.selectors.editTextarea);
+    // Click to focus first, then fill
+    await textarea.click();
+    await textarea.fill(content);
+  }
+
+  async saveEdit(): Promise<void> {
+    // Press Enter to save (same as chat input behavior)
+    await this.page.locator(this.selectors.editTextarea).press('Enter');
+    // Wait for edit textarea to be hidden
+    await this.page.locator(this.selectors.editTextarea).waitFor({ state: 'hidden' });
+  }
+
+  async cancelEdit(): Promise<void> {
+    // Press Escape to cancel
+    await this.page.locator(this.selectors.editTextarea).press('Escape');
+    await this.page.locator(this.selectors.editTextarea).waitFor({ state: 'hidden' });
+  }
+
+  async isInEditMode(): Promise<boolean> {
+    return await this.page.locator(this.selectors.editTextarea).isVisible();
+  }
+
+  async getEditTextareaContent(): Promise<string> {
+    return await this.page.locator(this.selectors.editTextarea).inputValue();
+  }
+
+  // ===== Delete Methods =====
+
+  async clickDeleteMessage(index: number): Promise<void> {
+    await this.hoverMessage(index);
+    const deleteBtn = this.page.locator(
+      `${this.selectors.deleteMessageButton}[data-message-index="${index}"]`
+    );
+    await deleteBtn.click();
+    await this.page.locator(this.selectors.deleteMessageDialog).waitFor({ state: 'visible' });
+  }
+
+  async confirmDelete(): Promise<void> {
+    await this.page.locator(this.selectors.deleteConfirmButton).click();
+    await this.page.locator(this.selectors.deleteMessageDialog).waitFor({ state: 'hidden' });
+  }
+
+  async cancelDelete(): Promise<void> {
+    await this.page.locator(this.selectors.deleteCancelButton).click();
+    await this.page.locator(this.selectors.deleteMessageDialog).waitFor({ state: 'hidden' });
+  }
+
+  async getDeleteCascadeCount(): Promise<number> {
+    const countElement = this.page.locator(this.selectors.deleteCascadeCount);
+    const isVisible = await countElement.isVisible();
+    if (!isVisible) return 1;
+    const text = await countElement.textContent();
+    const match = text?.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) + 1 : 1;
+  }
+
+  async isDeleteDialogVisible(): Promise<boolean> {
+    return await this.page.locator(this.selectors.deleteMessageDialog).isVisible();
+  }
+
+  // ===== Keyboard Shortcut Methods =====
+
+  async getPlatformModifier(): Promise<'Meta' | 'Control'> {
+    const isMac = await this.page.evaluate(() => navigator.platform.includes('Mac'));
+    return isMac ? 'Meta' : 'Control';
+  }
+
+  async pressSearchShortcut(): Promise<void> {
+    const mod = await this.getPlatformModifier();
+    await this.page.keyboard.press(`${mod}+k`);
+  }
+
+  async pressNewChatShortcut(): Promise<void> {
+    const mod = await this.getPlatformModifier();
+    await this.page.keyboard.press(`${mod}+Shift+o`);
+  }
+
+  async isSearchModalVisible(): Promise<boolean> {
+    return await this.page.locator(this.selectors.searchModal).isVisible();
   }
 }

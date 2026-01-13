@@ -103,12 +103,14 @@ export function usePersistence(userId: string | null) {
   }, [userId]);
 
   const saveMessage = useCallback(
-    async (convId: string, message: ChatMessage, model?: string): Promise<void> => {
+    async (convId: string, message: ChatMessage, model?: string): Promise<string> => {
+      const messageId = uuidv4();
       const dbMessage: Message = {
-        id: uuidv4(),
+        id: messageId,
         convId,
         role: message.role,
         content: message.content,
+        extra: message.extra,
         model,
         createdAt: Date.now(),
       };
@@ -125,6 +127,7 @@ export function usePersistence(userId: string | null) {
         }
         throw error;
       }
+      return messageId;
     },
     [cleanupOldestConversations]
   );
@@ -137,8 +140,44 @@ export function usePersistence(userId: string | null) {
         id: msg.id,
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
+        extra: msg.extra,
       }));
   }, []);
+
+  const updateMessage = useCallback(
+    async (convId: string, messageId: string, content: string): Promise<void> => {
+      await db.messages.update(messageId, { content });
+      await db.conversations.update(convId, { lastModified: Date.now() });
+    },
+    []
+  );
+
+  /**
+   * Delete a message and all following messages (cascade delete).
+   * Returns the count of messages that will be deleted.
+   */
+  const getMessageCascadeCount = useCallback(
+    async (convId: string, messageId: string): Promise<number> => {
+      const messages = await db.messages.where('convId').equals(convId).sortBy('createdAt');
+      const targetIndex = messages.findIndex(m => m.id === messageId);
+      if (targetIndex === -1) return 0;
+      return messages.length - targetIndex;
+    },
+    []
+  );
+
+  const deleteMessageCascade = useCallback(
+    async (convId: string, messageId: string): Promise<void> => {
+      const messages = await db.messages.where('convId').equals(convId).sortBy('createdAt');
+      const targetIndex = messages.findIndex(m => m.id === messageId);
+      if (targetIndex === -1) return;
+
+      const toDelete = messages.slice(targetIndex).map(m => m.id);
+      await db.messages.bulkDelete(toDelete);
+      await db.conversations.update(convId, { lastModified: Date.now() });
+    },
+    []
+  );
 
   const generateConversationTitle = useCallback((firstMessage: string): string => {
     const maxLength = 50;
@@ -158,6 +197,9 @@ export function usePersistence(userId: string | null) {
     listConversations,
     saveMessage,
     loadMessages,
+    updateMessage,
+    getMessageCascadeCount,
+    deleteMessageCascade,
     generateConversationTitle,
   };
 }

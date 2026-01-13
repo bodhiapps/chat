@@ -7,11 +7,12 @@
 | Feature | Status | Implementation Notes |
 |---------|--------|---------------------|
 | **Model Selection** | 🔄 Basic | List + select + refresh working; missing: auto-load, capabilities, model info dialog |
-| **Chat Interface** | 🔄 Partial | Streaming + markdown + thinking blocks + auto-scroll + gen params working; missing: token stats, message actions (copy/edit/delete) |
+| **Chat Interface** | 🔄 Partial | Streaming + markdown + thinking blocks + auto-scroll + gen params + message actions working; missing: token stats |
 | **Markdown Rendering** | ✅ Implemented | GFM + syntax highlighting + KaTeX + code enhancements (2026-01-13) |
+| **Message Actions** | ✅ Implemented | Copy, edit user messages, delete with cascade (2026-01-13) |
 | **File Attachments** | ❌ Not Started | No file upload/attachment capabilities |
 | **Tool Calls** | ❌ Schema Only | `MessageExtra.tool_calls` field exists; no display UI |
-| **Keyboard Shortcuts** | 🔄 Basic | Enter to send, Shift+Enter for newline; missing: Ctrl+K, Shift+Ctrl+O |
+| **Keyboard Shortcuts** | ✅ Implemented | Ctrl/Cmd+K (search), Ctrl/Cmd+Shift+O (new chat), Escape (close), Enter/Shift+Enter (send/newline) (2026-01-13) |
 | **Settings** | ✅ Implemented | 4-tab dialog (General, Sampling, Penalties, Display) with localStorage persistence via SettingsContext |
 | **Persistence** | ✅ Full | Dexie + user-scoped + CRUD + pin + search + quota handling all working |
 
@@ -64,8 +65,33 @@
 - ✅ Auto-grow textarea with Shift+Enter for newlines (2026-01-13)
 - ✅ Code block enhancements (language badge, copy button, HTML preview) (2026-01-13)
 
+**Implemented (2026-01-13)**:
+- ✅ Message actions: copy, edit user messages, delete with cascade
+  - Copy: Includes reasoning content, shows checkmark feedback
+  - Edit: Inline textarea, Enter to save, Escape/blur to cancel
+  - Delete: Cascade confirmation dialog with count
+- ✅ Action visibility: Hover (desktop) / kebab menu (mobile)
+- ✅ Visual feedback: Checkmark on copy, edit state indicator
+- ✅ Database operations: updateMessage, deleteMessageCascade, getMessageCascadeCount
+- ✅ Empty conversation UI with animated gradient orb
+
+**Implementation Files**:
+- `src/components/chat/MessageActions.tsx` - Action buttons component
+- `src/components/chat/EditableMessage.tsx` - Inline edit textarea
+- `src/components/chat/DeleteMessageDialog.tsx` - Confirmation dialog
+- `src/components/chat/EmptyConversation.tsx` - Empty state UI
+- `src/components/chat/MessageBubble.tsx` - Message container with actions
+- `src/hooks/usePersistence.ts` - Database operations
+- `src/context/ChatContext.tsx` - Context integration
+
+**E2E Tests**: `e2e/message-actions.spec.ts`
+- Copy message action
+- Edit user message (save, cancel, blur)
+- Delete message with cascade (confirm, cancel)
+
 **Not Implemented**:
-- ❌ Message actions (copy message, edit, delete, continue generation)
+- ❌ Edit assistant messages (requires regenerate option)
+- ❌ Continue generation (extend response)
 - ❌ Token statistics display (tokens/sec, processing time)
 - ⏸️ Incremental rendering with stable block caching (deferred)
 
@@ -91,13 +117,32 @@
 - Show tool results
 
 ### 5. Keyboard Shortcuts
-**Status**: Core
+**Status**: ✅ Implemented (2026-01-13)
 **Doc**: [05-shortcuts.md](./05-shortcuts.md)
 
-- Conversation search (Ctrl/Cmd+K)
-- New chat (Shift+Ctrl/Cmd+O)
-- Focus input
-- Navigation shortcuts
+**Implemented**:
+- ✅ Conversation search (Ctrl/Cmd+K)
+- ✅ New chat (Ctrl/Cmd+Shift+O)
+- ✅ Focus input (/)
+- ✅ Keyboard shortcuts guide (?)
+- ✅ Close modals (Escape)
+- ✅ Send message (Enter)
+- ✅ New line (Shift+Enter)
+- ✅ Platform-specific modifier keys (⌘ on Mac, Ctrl on Windows/Linux)
+- ✅ UI hints in tooltips and placeholders
+
+**Implementation Files**:
+- `src/hooks/useKeyboardShortcuts.ts` - Global keyboard event handler
+- `src/components/Layout.tsx` - Hook integration
+- `src/components/chat/InputArea.tsx` - Textarea shortcuts
+- `src/components/chat/ShortcutGuideModal.tsx` - Shortcuts reference modal
+- `src/components/chat/ConversationSidebar.tsx` - Tooltip hints
+- `src/components/chat/SearchModal.tsx` - Placeholder hints
+
+**E2E Tests**: `e2e/keyboard-shortcuts.spec.ts`
+
+**Not Implemented**:
+- ❌ Edit conversation name (Ctrl/Cmd+Shift+E)
 
 ### 6. Settings
 **Status**: ✅ Implemented (2026-01-12)
@@ -305,6 +350,36 @@ All 10 documentation files have been created with comprehensive functional requi
 
 ## Recent Updates
 
+### 2026-01-13: Message Actions & Keyboard Shortcuts Implementation
+
+Completed message actions and keyboard shortcuts features.
+
+**Message Actions**:
+- ✅ Copy message (includes reasoning content, checkmark feedback)
+- ✅ Edit user messages (inline textarea, Enter/Escape/blur controls)
+- ✅ Delete with cascade (confirmation dialog with count)
+- ✅ Desktop: hover to show actions
+- ✅ Mobile: kebab menu (three dots)
+- ✅ Empty conversation UI with animated gradient orb
+
+**Keyboard Shortcuts**:
+- ✅ Ctrl/Cmd+K: Open search modal
+- ✅ Ctrl/Cmd+Shift+O: Create new conversation
+- ✅ Escape: Close modals
+- ✅ Enter/Shift+Enter: Send message / new line
+- ✅ /: Focus chat input
+- ✅ Platform-specific modifier keys (⌘ on Mac, Ctrl on Windows/Linux)
+- ✅ UI hints in tooltips and placeholders
+
+**E2E Tests**:
+- `e2e/message-actions.spec.ts` - Complete message action flows
+- `e2e/keyboard-shortcuts.spec.ts` - Global keyboard navigation
+
+**Implementation Files**:
+- Message actions: 7 new components/hooks (MessageActions, EditableMessage, DeleteMessageDialog, EmptyConversation, etc.)
+- Keyboard shortcuts: 1 new hook (useKeyboardShortcuts) + Layout integration
+- Database: 3 new persistence methods (updateMessage, deleteMessageCascade, getMessageCascadeCount)
+
 ### 2026-01-13: Markdown Rendering Implementation
 
 Completed full markdown rendering feature. See [Code & Markdown](#code--markdown) section for implementation details.
@@ -319,3 +394,4 @@ Key additions:
 ---
 
 _Documentation completed: All phases finished with cross-references and complete feature inventory._
+_Last updated: 2026-01-13 - Message Actions & Keyboard Shortcuts_

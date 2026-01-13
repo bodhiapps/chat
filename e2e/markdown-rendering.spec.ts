@@ -5,7 +5,7 @@ import { BACKEND_URL, TEST_USER, TEST_PASSWORD } from './test-utils.js';
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Markdown Rendering', () => {
+test.describe.serial('Markdown Rendering', () => {
   test('renders code blocks with syntax highlighting and copy button', async ({ page }) => {
     const chatPage = new ChatPage(page);
     const setupModal = new SetupModalHelper(page);

@@ -10,6 +10,9 @@ export function ChatContainer() {
     isLoadingConversation,
     currentConversationId,
     retryMessage,
+    editMessage,
+    deleteMessage,
+    getMessageCascadeCount,
   } = useChatContext();
 
   return (
@@ -24,6 +27,9 @@ export function ChatContainer() {
         error={error}
         currentConversationId={currentConversationId}
         onRetryMessage={retryMessage}
+        onEditMessage={editMessage}
+        onDeleteMessage={deleteMessage}
+        onGetCascadeCount={getMessageCascadeCount}
       />
       <InputArea />
     </div>

@@ -25,7 +25,8 @@ Chat interface enables real-time streaming conversations with AI models, support
 - ✅ Code block enhancements (language badge, copy button, HTML preview)
 - ✅ Reasoning/thinking blocks (collapsible, auto-expand setting)
 - ✅ Auto-grow textarea with Shift+Enter for newlines
-- ❌ Missing: token stats, message actions (copy/edit/delete)
+- ✅ Message actions: copy, edit user messages, delete with cascade (2026-01-13)
+- ❌ Missing: token stats, edit assistant messages, continue generation
 
 ---
 
@@ -51,11 +52,11 @@ Chat interface enables real-time streaming conversations with AI models, support
   - ✅ HTML code preview dialog
 
 - 🔄 **As a user**, I can copy, edit, regenerate, and delete messages so that I can manage my conversation
-  - ❌ Copy message text
-  - ❌ Edit user messages (preserves responses)
+  - ✅ Copy message text (includes reasoning if present)
+  - ✅ Edit user messages (preserves responses)
   - ❌ Edit assistant messages (option to regenerate)
   - ✅ Regenerate assistant responses
-  - ❌ Delete individual messages
+  - ✅ Delete individual messages (cascade delete)
   - ❌ Continue generation (extend response)
 
 - ✅ **As a user**, I can see reasoning/thinking content separately so that I understand the AI's thought process
@@ -138,16 +139,29 @@ Chat interface enables real-time streaming conversations with AI models, support
 
 ### Message Actions
 
+**Status**: ✅ Implemented (2026-01-13)
+
 **Behavior**: User can manage individual messages
-- **Copy**: Copy message text to clipboard
+- **Copy**: Copy message text to clipboard (includes reasoning content if present)
 - **Edit** (user message): Inline textarea, preserves assistant responses
+  - Enter to save, Escape to cancel, blur to cancel
+  - Empty content triggers delete confirmation
 - **Regenerate** (assistant): Delete message + create new streaming response
 - **Delete**: Remove message + all descendant messages (cascading)
-- **Continue** (experimental): Extend incomplete assistant response
+  - Shows cascade count in confirmation dialog
+  - Requires explicit confirmation
+- **Continue** (experimental): ❌ Not implemented - Extend incomplete assistant response
 
 **Action Visibility**:
-- Desktop: Show on message hover
-- Mobile: Always visible
+- Desktop: Show on message hover (opacity transition)
+- Mobile: Kebab menu (three dots) always visible
+
+**Implementation**: 
+- `src/components/chat/MessageActions.tsx` - Action buttons component
+- `src/components/chat/EditableMessage.tsx` - Inline edit textarea
+- `src/components/chat/DeleteMessageDialog.tsx` - Confirmation dialog
+- `src/components/chat/MessageBubble.tsx` - Message container with actions
+- `src/hooks/usePersistence.ts` - Database operations (updateMessage, deleteMessageCascade, getMessageCascadeCount)
 
 ### Auto-Scroll
 
@@ -250,22 +264,65 @@ Chat interface enables real-time streaming conversations with AI models, support
 - **WHEN** user scrolls back to bottom
 - **THEN** auto-scroll re-enables
 
-### Scenario: Regenerate message
+### Scenario: Regenerate message ✅
 
 - **GIVEN** conversation has assistant message
-- **WHEN** user clicks regenerate button
+- **WHEN** user hovers over message (desktop) or taps kebab menu (mobile)
+- **AND** user clicks regenerate button
 - **THEN** assistant message is deleted
 - **AND** new streaming request initiated
 - **AND** new message appears with fresh response
 
-### Scenario: Edit user message
+**Note**: Regenerate button is currently available via retry mechanism for error messages. Full regenerate UI for successful messages is pending.
+
+### Scenario: Delete message with cascade ✅
+
+- **GIVEN** conversation has multiple messages
+- **WHEN** user clicks delete button on a message
+- **THEN** confirmation dialog appears
+- **AND** dialog shows cascade count ("this message and N following messages")
+- **WHEN** user confirms deletion
+- **THEN** target message and all following messages are deleted
+- **AND** conversation.lastModified is updated
+- **AND** UI updates to reflect deletion
+- **WHEN** user cancels deletion
+- **THEN** dialog closes and all messages are preserved
+
+**E2E Coverage**: `e2e/message-actions.spec.ts`
+- Delete with cascade count display
+- Confirm deletion
+- Cancel deletion preserves messages
+
+### Scenario: Copy message content ✅
+
+- **GIVEN** user views a message in conversation
+- **WHEN** user clicks copy button
+- **THEN** message content is copied to clipboard
+- **AND** reasoning content is included (if present)
+- **AND** checkmark feedback is shown for 2 seconds
+- **AND** copy state resets after feedback period
+
+**E2E Coverage**: `e2e/message-actions.spec.ts`
+- Copy action with clipboard verification
+- Visual feedback (checkmark)
+
+### Scenario: Edit user message ✅
 
 - **GIVEN** user message exists in conversation
-- **WHEN** user clicks edit button
+- **WHEN** user hovers over message (desktop) or taps kebab menu (mobile)
+- **AND** user clicks edit button
 - **THEN** inline textarea appears with message content
-- **WHEN** user modifies text and saves
-- **THEN** message content updates
+- **AND** textarea is auto-focused with cursor at end
+- **WHEN** user modifies text and presses Enter
+- **THEN** message content updates in database and UI
 - **AND** all assistant responses are preserved (no regeneration)
+- **WHEN** user presses Escape or clicks outside textarea
+- **THEN** edit mode cancels and changes are discarded
+
+**E2E Coverage**: `e2e/message-actions.spec.ts`
+- Save changes flow
+- Cancel with Escape
+- Cancel with blur (click outside)
 
 ### Scenario: Thinking block display ✅
 
@@ -392,6 +449,43 @@ See `$webui-folder/src/lib/components/app/chat/ChatMessages/ChatMessages.svelte`
 
 ### Message Actions
 
+**Status**: ✅ Implemented (2026-01-13)
+
+**Edit Flow** (user messages only):
+```
+1. Click edit button → Show inline textarea with current content
+2. Modify content (auto-focus, cursor at end)
+3. Save options:
+   - Press Enter (without Shift) → Save changes
+   - Press Escape → Cancel (discard changes)
+   - Click outside (blur) → Cancel (discard changes)
+   - Empty content → Trigger delete confirmation
+4. On save: Update message.content in database
+5. Update conversation.lastModified timestamp
+6. Preserve all assistant responses (no regeneration)
+```
+
+**Delete Flow** (cascade delete):
+```
+1. Click delete button → Calculate cascade count
+2. Show confirmation dialog with count:
+   - "Delete this message and N following messages"
+3. User confirms or cancels
+4. On confirm:
+   - Delete target message and all following (by createdAt order)
+   - Update conversation.lastModified
+   - Update UI state (remove messages from display)
+```
+
+**Copy Flow**:
+```
+1. Click copy button
+2. Concatenate reasoning_content + content (if reasoning present)
+3. Write to clipboard via navigator.clipboard.writeText()
+4. Show checkmark feedback for 2 seconds
+5. Handle errors gracefully
+```
+
 **Regenerate Flow**:
 ```
 1. Delete message (cascading: removes descendants)
@@ -399,14 +493,6 @@ See `$webui-folder/src/lib/components/app/chat/ChatMessages/ChatMessages.svelte`
 3. Build message history up to parent
 4. Send new streaming request
 5. Create new message with response
-```
-
-**Edit Flow**:
-```
-1. Show inline textarea with current content
-2. On save: update message content in database
-3. Preserve all assistant responses (no deletion)
-4. Update conversation lastModified timestamp
 ```
 
 ---
@@ -420,6 +506,9 @@ See `$webui-folder/src/lib/components/app/chat/ChatMessages/ChatMessages.svelte`
 - Chronological display (oldest → newest)
 - User messages: right-aligned, blue accent
 - Assistant messages: left-aligned, muted background
+- Empty state: Animated gradient orb with "Start a conversation" message
+  - Shows keyboard shortcut hint: "Press / to focus input"
+  - Implemented in `src/components/chat/EmptyConversation.tsx`
 
 ### Message Bubble
 - Content (markdown rendered)
@@ -439,9 +528,15 @@ See `$webui-folder/src/lib/components/app/chat/ChatMessages/ChatMessages.svelte`
 ### Input Form ✅
 - Auto-growing textarea (max 200px height)
 - Shift+Enter for newlines, Enter to send
-- Model selector (if multi-model mode)
+- Model selector with refresh button
 - Send button (disabled when empty) / Stop button (when streaming)
+- Keyboard shortcut hint: "Shift + Enter for new line"
 - ⏸️ Attachment button (deferred)
+
+**Layout** (2026-01-13):
+- **Desktop (lg+)**: 3-column grid: empty | centered input (max-w-4xl) | logo (right edge)
+- **Mobile/Tablet**: Flex row: input (flex-1) | logo (shrink-0)
+- **Bodhi badge**: Positioned at right edge on desktop, next to input on mobile
 
 **Implementation**: `src/components/chat/InputArea.tsx`
 

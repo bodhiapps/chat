@@ -48,7 +48,7 @@ export function ConversationItem({
         <Pin
           size={14}
           className={cn(
-            conversation.pinned ? 'text-blue-600 fill-blue-600' : 'text-muted-foreground'
+            conversation.pinned ? 'text-primary fill-primary' : 'text-muted-foreground'
           )}
         />
       </button>
@@ -61,7 +61,7 @@ export function ConversationItem({
         title="Delete conversation"
         data-testid="btn-delete-conversation"
       >
-        <Trash2 size={14} className="text-red-600" />
+        <Trash2 size={14} className="text-destructive" />
       </button>
     </div>
   );
