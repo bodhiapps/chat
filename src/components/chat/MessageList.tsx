@@ -101,6 +101,8 @@ export function MessageList({
                   index={index}
                   messageId={msg.id}
                   isHighlighted={msg.id === highlightedMessageId}
+                  isStreaming={isStreaming}
+                  isLastMessage={index === messages.length - 1}
                   onRetry={onRetryMessage ? () => onRetryMessage(index) : undefined}
                 />
               ))}

@@ -1,6 +1,9 @@
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useSettingsContext } from '@/hooks/useSettingsContext';
+import { MarkdownContent } from '@/components/markdown/MarkdownContent';
+import { ThinkingBlock } from '@/components/markdown/ThinkingBlock';
 import type { ChatMessage } from '@/hooks/useChat';
 
 interface MessageBubbleProps {
@@ -8,6 +11,8 @@ interface MessageBubbleProps {
   index: number;
   messageId?: string;
   isHighlighted?: boolean;
+  isStreaming?: boolean;
+  isLastMessage?: boolean;
   onRetry?: () => void;
 }
 
@@ -16,9 +21,14 @@ export function MessageBubble({
   index,
   messageId,
   isHighlighted,
+  isStreaming = false,
+  isLastMessage = false,
   onRetry,
 }: MessageBubbleProps) {
+  const { settings } = useSettingsContext();
   const isUser = message.role === 'user';
+  const renderAsMarkdown =
+    message.role === 'assistant' || settings.display.renderUserContentAsMarkdown;
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -35,7 +45,20 @@ export function MessageBubble({
             : 'bg-muted text-foreground border border-border'
         )}
       >
-        <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        {message.extra?.reasoning_content && (
+          <ThinkingBlock
+            content={message.extra.reasoning_content}
+            isStreaming={isStreaming && isLastMessage}
+            autoExpand={settings.display.showThoughtInProgress}
+          />
+        )}
+
+        {renderAsMarkdown ? (
+          <MarkdownContent content={message.content} />
+        ) : (
+          <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        )}
+
         {message.error && (
           <div className="flex items-center gap-2 mt-2 text-red-600 text-sm">
             <AlertCircle size={14} />

@@ -122,8 +122,11 @@ export function ConversationSidebar({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1" data-test-pinned-count={pinnedConversations.length}>
-        <div className="p-2 space-y-1">
+      <ScrollArea
+        className="flex-1 overflow-hidden"
+        data-test-pinned-count={pinnedConversations.length}
+      >
+        <div className="p-2 space-y-1 min-w-0">
           {!isAuthenticated ? (
             <div className="text-center py-8 px-4" data-testid="sidebar-login-prompt">
               <p className="text-sm text-muted-foreground mb-4">

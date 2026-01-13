@@ -39,24 +39,27 @@
 ---
 
 ## Code & Markdown Rendering
+**Status**: ✅ Implemented (2026-01-13)
 **Used in**: [02-chat.md](./02-chat.md) (Markdown Rendering Pipeline)
 
 | llama.cpp (Svelte) | bodhiapps/chat (React) | Status | Purpose |
 |--------------------|------------------------|--------|---------|
-| `highlight.js` v11.11.1 | `highlight.js` v11.11.1 | ❌ | Code syntax highlighting |
-| `remark` v15.0.1 | `remark` v15.0.1 | ❌ | Markdown AST processing (base parser) |
-| `remark-gfm` v4.0.1 | `remark-gfm` v4.0.1 | ❌ | GitHub Flavored Markdown (tables, strikethrough, autolinks) |
-| `remark-breaks` v4.0.0 | `remark-breaks` v4.0.0 | ❌ | Convert line breaks to `<br>` tags |
-| `remark-html` v16.0.1 | `remark-html` v16.0.1 | ❌ | Convert markdown to HTML |
-| `remark-rehype` v11.1.2 | `remark-rehype` v11.1.2 | ❌ | Bridge between remark (mdast) and rehype (hast) |
-| `remark-math` v6.0.0 | `remark-math` v6.0.0 | ❌ | Parse LaTeX math syntax |
-| `rehype-highlight` v7.0.2 | `rehype-highlight` v7.0.2 | ❌ | Syntax highlighting via rehype |
-| `rehype-katex` v7.0.1 | `rehype-katex` v7.0.1 | ❌ | LaTeX/Math rendering via KaTeX |
-| `rehype-stringify` v10.0.1 | `rehype-stringify` v10.0.1 | ❌ | Serialize HAST to HTML string |
-| `unist-util-visit` v5.0.0 | `unist-util-visit` v5.0.0 | ❌ | Unified AST traversal utilities |
-| `unified` v11.0.5 | `unified` v11.0.5 | ❌ | Text processing ecosystem (used by remark/rehype) |
+| `highlight.js` v11.11.1 | `highlight.js` v11.11.1 | ✅ | Code syntax highlighting |
+| `katex` v0.16.x | `katex` v0.16.27 | ✅ | LaTeX math rendering |
+| `remark` v15.0.1 | `remark` v15.0.1 | ✅ | Markdown AST processing (base parser) |
+| `remark-parse` v11.0.0 | `remark-parse` v11.0.0 | ✅ | Markdown parser |
+| `remark-gfm` v4.0.1 | `remark-gfm` v4.0.1 | ✅ | GitHub Flavored Markdown (tables, strikethrough, autolinks) |
+| `remark-breaks` v4.0.0 | `remark-breaks` v4.0.0 | ✅ | Convert line breaks to `<br>` tags |
+| `remark-rehype` v11.1.2 | `remark-rehype` v11.1.2 | ✅ | Bridge between remark (mdast) and rehype (hast) |
+| `remark-math` v6.0.0 | `remark-math` v6.0.0 | ✅ | Parse LaTeX math syntax |
+| `rehype-highlight` v7.0.2 | `rehype-highlight` v7.0.2 | ✅ | Syntax highlighting via rehype |
+| `rehype-katex` v7.0.1 | `rehype-katex` v7.0.1 | ✅ | LaTeX/Math rendering via KaTeX |
+| `rehype-stringify` v10.0.1 | `rehype-stringify` v10.0.1 | ✅ | Serialize HAST to HTML string |
+| `unist-util-visit` v5.0.0 | `unist-util-visit` v5.0.0 | ✅ | Unified AST traversal utilities |
+| `unified` v11.0.5 | `unified` v11.0.5 | ✅ | Text processing ecosystem (used by remark/rehype) |
+| `remark-html` v16.0.1 | N/A | ❌ | Not needed (using rehype-stringify instead) |
 
-**Alternative**: Could use `react-markdown` v9.x as a simpler all-in-one solution, but remark/rehype pipeline offers more control and matches llama.cpp implementation.
+**Implementation**: `src/lib/markdown/processor.ts` - Unified pipeline with custom `rehypeEnhanceCodeBlocks` plugin.
 
 ---
 
@@ -112,17 +115,18 @@ The llama.cpp webui uses KaTeX with custom SCSS for font optimization:
 ### Required for Core Features
 
 ```bash
-npm install highlight.js@^11.11.1
 npm install pdfjs-dist@^5.4.54
-npm install dexie@^4.0.11
-npm install uuid@^13.0.0
 npm install fflate@^0.8.2
 ```
 
-### Markdown Processing
+### ✅ Already Installed (Markdown Processing - 2026-01-13)
 
 ```bash
+# These are already in package.json
+npm install highlight.js@^11.11.1
+npm install katex@^0.16.27
 npm install remark@^15.0.1
+npm install remark-parse@^11.0.0
 npm install remark-gfm@^4.0.1
 npm install remark-breaks@^4.0.0
 npm install remark-math@^6.0.0
@@ -153,7 +157,7 @@ npm install -D sass@^1.93.3
 
 ## Implementation Notes
 
-### 1. Markdown Rendering
+### 1. Markdown Rendering ✅ (Implemented 2026-01-13)
 
 The llama.cpp webui uses a custom remark/rehype pipeline with custom plugins:
 - `remarkLiteralHtml` - Escapes raw HTML to prevent XSS
@@ -161,12 +165,11 @@ The llama.cpp webui uses a custom remark/rehype pipeline with custom plugins:
 - `rehypeEnhanceLinks` - Adds `target="_blank"` and security attrs
 - `rehypeEnhanceCodeBlocks` - Wraps code blocks with copy/preview buttons
 
-In React, can:
-1. Port these custom plugins
-2. Use `react-markdown` with custom components
-3. Create React components that wrap the remark/rehype pipeline
-
-**Recommendation**: Use remark/rehype pipeline for feature parity, wrap in React component
+**bodhiapps/chat Implementation**:
+- `src/lib/markdown/processor.ts` - Unified pipeline (remark → rehype)
+- `src/lib/markdown/enhance-code-blocks.ts` - Custom rehype plugin for code enhancements
+- `src/lib/markdown/latex-protection.ts` - LaTeX preprocessing for edge cases
+- `src/components/markdown/MarkdownContent.tsx` - React component wrapper
 
 ### 2. PDF Processing
 
@@ -205,4 +208,4 @@ All recommended versions are compatible with:
 
 ---
 
-_Updated: Phase libraries completed_
+_Updated: 2026-01-13 - Markdown processing libraries installed and implemented_

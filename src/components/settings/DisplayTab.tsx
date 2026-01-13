@@ -44,6 +44,32 @@ export function DisplayTab() {
           data-testid="settings-display-autoShowSidebarOnNewChat"
         />
       </div>
+
+      <div className="flex items-center justify-between">
+        <Label htmlFor="showThoughtInProgress" className="flex-1">
+          Show Thought in Progress
+        </Label>
+        <Switch
+          id="showThoughtInProgress"
+          checked={settings.display.showThoughtInProgress}
+          onCheckedChange={checked => updateSetting('display', 'showThoughtInProgress', checked)}
+          data-testid="settings-display-showThoughtInProgress"
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Label htmlFor="renderUserContentAsMarkdown" className="flex-1">
+          Render User Content as Markdown
+        </Label>
+        <Switch
+          id="renderUserContentAsMarkdown"
+          checked={settings.display.renderUserContentAsMarkdown}
+          onCheckedChange={checked =>
+            updateSetting('display', 'renderUserContentAsMarkdown', checked)
+          }
+          data-testid="settings-display-renderUserContentAsMarkdown"
+        />
+      </div>
     </div>
   );
 }

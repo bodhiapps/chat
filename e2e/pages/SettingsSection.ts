@@ -212,6 +212,36 @@ class DisplayTab {
       await toggle.click();
     }
   }
+
+  async setShowThoughtInProgress(value: boolean): Promise<void> {
+    const toggle = this.page.locator('[data-testid="settings-display-showThoughtInProgress"]');
+    const isChecked = await toggle.isChecked();
+    if (isChecked !== value) {
+      await toggle.click();
+    }
+  }
+
+  async setRenderUserContentAsMarkdown(value: boolean): Promise<void> {
+    const toggle = this.page.locator(
+      '[data-testid="settings-display-renderUserContentAsMarkdown"]'
+    );
+    const isChecked = await toggle.isChecked();
+    if (isChecked !== value) {
+      await toggle.click();
+    }
+  }
+
+  async getShowThoughtInProgress(): Promise<boolean> {
+    const toggle = this.page.locator('[data-testid="settings-display-showThoughtInProgress"]');
+    return await toggle.isChecked();
+  }
+
+  async getRenderUserContentAsMarkdown(): Promise<boolean> {
+    const toggle = this.page.locator(
+      '[data-testid="settings-display-renderUserContentAsMarkdown"]'
+    );
+    return await toggle.isChecked();
+  }
 }
 
 export class SettingsSection {

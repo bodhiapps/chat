@@ -12,11 +12,13 @@ export interface GenerationSettings {
   frequency_penalty: number;
 }
 
-// Display/UI preferences (only functional ones now, deferred to later slices)
+// Display/UI preferences
 export interface DisplaySettings {
   disableAutoScroll: boolean;
   alwaysShowSidebarOnDesktop: boolean;
   autoShowSidebarOnNewChat: boolean;
+  showThoughtInProgress: boolean;
+  renderUserContentAsMarkdown: boolean;
 }
 
 // General settings
@@ -52,6 +54,8 @@ export const DEFAULT_SETTINGS: Settings = {
     disableAutoScroll: false,
     alwaysShowSidebarOnDesktop: true,
     autoShowSidebarOnNewChat: true,
+    showThoughtInProgress: true,
+    renderUserContentAsMarkdown: false,
   },
 };
 

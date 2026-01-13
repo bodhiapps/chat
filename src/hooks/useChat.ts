@@ -6,6 +6,9 @@ export interface ChatMessage {
   id?: string;
   role: 'user' | 'assistant';
   content: string;
+  extra?: {
+    reasoning_content?: string;
+  };
   error?: {
     message: string;
     retryable: boolean;
@@ -130,13 +133,19 @@ export function useChat() {
             break;
           }
           const content = chunk.choices?.[0]?.delta?.content || '';
-          if (content) {
+          const reasoningContent = chunk.choices?.[0]?.delta?.reasoning_content || '';
+
+          if (content || reasoningContent) {
             setMessages(prev => {
               const updated = [...prev];
               const lastIndex = updated.length - 1;
               updated[lastIndex] = {
                 ...updated[lastIndex],
                 content: updated[lastIndex].content + content,
+                extra: {
+                  reasoning_content:
+                    (updated[lastIndex].extra?.reasoning_content || '') + reasoningContent,
+                },
               };
               return updated;
             });

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useBodhi } from '@bodhiapp/bodhi-js-react';
 import { Plus, RefreshCw, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -24,6 +24,7 @@ export function InputArea() {
     loadModels,
   } = useChatContext();
   const [message, setMessage] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const isDisabled = !isReady || !isAuthenticated;
 
@@ -33,11 +34,30 @@ export function InputArea() {
     return 'Type a message...';
   };
 
+  const autoResize = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  };
+
+  useEffect(() => {
+    autoResize();
+  }, [message]);
+
   const handleSubmit = async () => {
     if (isDisabled || !message.trim()) return;
     const messageToSend = message;
     setMessage('');
     await sendMessage(messageToSend);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   const handleNewChat = () => {
@@ -59,55 +79,63 @@ export function InputArea() {
             size="icon"
             title="New chat"
             disabled={isDisabled}
-            className="row-span-2 self-center"
+            className="row-span-2 self-start pt-2"
           >
             <Plus />
           </Button>
 
-          <Input
+          <Textarea
+            ref={textareaRef}
             data-testid="chat-input"
             value={message}
             onChange={e => setMessage(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+            onKeyDown={handleKeyDown}
             placeholder={getHintText()}
             disabled={isDisabled}
-            className="col-start-2 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="col-start-2 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[40px] max-h-[200px]"
+            rows={1}
           />
 
-          <div className="col-start-2 flex items-center gap-2 justify-end">
-            <Select
-              value={selectedModel}
-              onValueChange={setSelectedModel}
-              disabled={models.length === 0}
-            >
-              <SelectTrigger
-                data-testid="model-selector"
-                data-teststate={
-                  isLoadingModels ? 'loading' : models.length === 0 ? 'no-models' : 'ready'
-                }
-                className="w-[240px] border-0 focus:ring-0"
+          <div className="col-start-2 flex items-center gap-2 justify-between">
+            <span className="text-xs text-muted-foreground">
+              <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Shift</kbd> +{' '}
+              <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> for new line
+            </span>
+            <div className="flex items-center gap-2">
+              <Select
+                value={selectedModel}
+                onValueChange={setSelectedModel}
+                disabled={models.length === 0}
               >
-                <SelectValue placeholder="No models" />
-              </SelectTrigger>
-              <SelectContent>
-                {models.map(model => (
-                  <SelectItem key={model} value={model}>
-                    {model}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  data-testid="model-selector"
+                  data-teststate={
+                    isLoadingModels ? 'loading' : models.length === 0 ? 'no-models' : 'ready'
+                  }
+                  className="w-[240px] border-0 focus:ring-0"
+                >
+                  <SelectValue placeholder="No models" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map(model => (
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Button
-              data-testid="btn-refresh-models"
-              onClick={loadModels}
-              variant="ghost"
-              size="icon"
-              title="Refresh models"
-              disabled={isLoadingModels}
-            >
-              <RefreshCw className={isLoadingModels ? 'animate-spin' : ''} size={18} />
-            </Button>
+              <Button
+                data-testid="btn-refresh-models"
+                onClick={loadModels}
+                variant="ghost"
+                size="icon"
+                title="Refresh models"
+                disabled={isLoadingModels}
+              >
+                <RefreshCw className={isLoadingModels ? 'animate-spin' : ''} size={18} />
+              </Button>
+            </div>
           </div>
 
           <Button
@@ -116,7 +144,7 @@ export function InputArea() {
             disabled={isDisabled || !message.trim()}
             variant="ghost"
             size="icon"
-            className="row-span-2 col-start-3 self-center"
+            className="row-span-2 col-start-3 self-start pt-2"
             title="Send message"
           >
             <ArrowUp />

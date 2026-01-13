@@ -7,10 +7,11 @@
 | Feature | Status | Implementation Notes |
 |---------|--------|---------------------|
 | **Model Selection** | 🔄 Basic | List + select + refresh working; missing: auto-load, capabilities, model info dialog |
-| **Chat Interface** | 🔄 Partial | Streaming + retry + regenerate + theme + auto-scroll + gen params working; missing: markdown, code highlighting, stats, message actions |
+| **Chat Interface** | 🔄 Partial | Streaming + markdown + thinking blocks + auto-scroll + gen params working; missing: token stats, message actions (copy/edit/delete) |
+| **Markdown Rendering** | ✅ Implemented | GFM + syntax highlighting + KaTeX + code enhancements (2026-01-13) |
 | **File Attachments** | ❌ Not Started | No file upload/attachment capabilities |
 | **Tool Calls** | ❌ Schema Only | `MessageExtra.tool_calls` field exists; no display UI |
-| **Keyboard Shortcuts** | ❌ Minimal | Only Enter to send; missing: Ctrl+K, Shift+Ctrl+O, Shift+Enter |
+| **Keyboard Shortcuts** | 🔄 Basic | Enter to send, Shift+Enter for newline; missing: Ctrl+K, Shift+Ctrl+O |
 | **Settings** | ✅ Implemented | 4-tab dialog (General, Sampling, Penalties, Display) with localStorage persistence via SettingsContext |
 | **Persistence** | ✅ Full | Dexie + user-scoped + CRUD + pin + search + quota handling all working |
 
@@ -57,14 +58,16 @@
 - ✅ Theme support (light/dark/system via ThemeProvider)
 - ✅ Generation parameters from settings applied to API (temperature, top_p, top_k, min_p, max_tokens, penalties)
 - ✅ System message injection from settings
+- ✅ Full GitHub Flavored Markdown with syntax highlighting (2026-01-13)
+- ✅ LaTeX/math rendering via KaTeX (2026-01-13)
+- ✅ Reasoning/thinking blocks (collapsible, `showThoughtInProgress` setting) (2026-01-13)
+- ✅ Auto-grow textarea with Shift+Enter for newlines (2026-01-13)
+- ✅ Code block enhancements (language badge, copy button, HTML preview) (2026-01-13)
 
 **Not Implemented**:
-- ❌ Reasoning/thinking blocks (collapsible, auto-collapse on regular content)
-- ❌ Message actions (copy, edit, delete, continue generation)
+- ❌ Message actions (copy message, edit, delete, continue generation)
 - ❌ Token statistics display (tokens/sec, processing time)
-- ❌ Full GitHub Flavored Markdown with syntax highlighting
-- ❌ LaTeX/math rendering (KaTeX)
-- ❌ Auto-grow textarea (currently fixed height)
+- ⏸️ Incremental rendering with stable block caching (deferred)
 
 ### 3. File Attachments
 **Status**: Core
@@ -111,7 +114,7 @@
 - ✅ Generation parameters (10 params): temperature, top_p, top_k, min_p, typ_p, max_tokens, repeat_last_n, repeat_penalty, presence_penalty, frequency_penalty
 - ✅ Theme selection (light/dark/system) with real-time switching
 - ✅ System message injection into all conversations
-- ✅ Display options: disableAutoScroll, alwaysShowSidebarOnDesktop, autoShowSidebarOnNewChat
+- ✅ Display options: disableAutoScroll, alwaysShowSidebarOnDesktop, autoShowSidebarOnNewChat, showThoughtInProgress, renderUserContentAsMarkdown
 - ✅ Auto-save on every setting change
 - ✅ Numeric validation with VALIDATION_RANGES (min/max/step)
 - ✅ Deep merge for partial updates
@@ -122,7 +125,7 @@
 - `src/components/settings/GeneralTab.tsx` (theme + systemMessage)
 - `src/components/settings/SamplingTab.tsx` (6 generation params with sliders)
 - `src/components/settings/PenaltiesTab.tsx` (4 penalty params with sliders)
-- `src/components/settings/DisplayTab.tsx` (3 boolean switches)
+- `src/components/settings/DisplayTab.tsx` (5 boolean switches)
 - `src/components/theme-provider.tsx` (theme system with localStorage sync)
 - `src/context/SettingsContext.tsx` (provider with theme integration)
 - `src/hooks/useSettings.ts` (persistence + validation logic)
@@ -130,6 +133,10 @@
 - `src/db/schema.ts` (userSettings table: userId, settings JSON, lastModified)
 - `e2e/pages/SettingsSection.ts` (page object for E2E)
 - `e2e/settings.spec.ts` (5 E2E scenarios)
+
+**Display Settings** (updated 2026-01-13):
+- ✅ `showThoughtInProgress` - Control thinking block auto-expand
+- ✅ `renderUserContentAsMarkdown` - Render user messages as markdown
 
 **Deferred Features**:
 - ⏸️ Server defaults synchronization (requires backend /props endpoint enhancement)
@@ -139,7 +146,7 @@
 - ⏸️ API key configuration
 - ⏸️ Advanced samplers (dynatemp, XTC, DRY)
 - ⏸️ Custom parameters JSON field
-- ⏸️ Additional display options (showMessageStats, keepStatsVisible, renderUserContentAsMarkdown)
+- ⏸️ Additional display options (showMessageStats, keepStatsVisible)
 
 ### 7. Persistence
 **Status**: Core
@@ -168,14 +175,26 @@
 - Conversation deep linking
 
 ### Code & Markdown
+**Status**: ✅ Implemented (2026-01-13)
 **Related docs**: [Chat](./02-chat.md), [Libraries](./libraries.md)
 
-- Full GitHub Flavored Markdown support (remark + rehype pipeline)
-- Syntax highlighting (highlight.js with 25+ languages)
-- LaTeX/math rendering (KaTeX with display/inline modes)
-- HTML preview for code blocks
-- Copy code button per block
-- Incremental rendering with stable block caching
+- ✅ Full GitHub Flavored Markdown support (remark-gfm: tables, strikethrough, task lists)
+- ✅ Syntax highlighting (highlight.js with 25+ languages)
+- ✅ LaTeX/math rendering (KaTeX with display/inline modes)
+- ✅ HTML preview for code blocks (sandboxed iframe dialog)
+- ✅ Copy code button per block
+- ✅ Language badge on code blocks
+- ⏸️ Incremental rendering with stable block caching (deferred)
+
+**Implementation Files**:
+- `src/components/markdown/MarkdownContent.tsx`
+- `src/components/markdown/ThinkingBlock.tsx`
+- `src/components/markdown/CodePreviewDialog.tsx`
+- `src/lib/markdown/processor.ts`
+- `src/lib/markdown/enhance-code-blocks.ts`
+- `src/lib/markdown/latex-protection.ts`
+
+**E2E Tests**: `e2e/markdown-rendering.spec.ts`
 
 ### URL Deep Linking
 - Pre-fill prompt via ?q= parameter
@@ -281,6 +300,21 @@ All 10 documentation files have been created with comprehensive functional requi
 - Created `_template.md` and `_guidelines.md` for doc standards
 
 **Documentation Status**: All 10 docs optimized for AI/LLM consumption with clear functional requirements.
+
+---
+
+## Recent Updates
+
+### 2026-01-13: Markdown Rendering Implementation
+
+Completed full markdown rendering feature. See [Code & Markdown](#code--markdown) section for implementation details.
+
+Key additions:
+- GFM markdown, syntax highlighting, KaTeX math rendering
+- Thinking/reasoning blocks with `showThoughtInProgress` setting
+- Auto-grow textarea with Shift+Enter for newlines
+- Code block enhancements (language badge, copy button, HTML preview)
+- E2E tests: `e2e/markdown-rendering.spec.ts`
 
 ---
 

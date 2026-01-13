@@ -38,6 +38,16 @@ export class ChatPage {
     searchResultGroup: '[data-testid="search-result-group"]',
     searchResultMessage: '[data-testid="search-result-message"]',
     sidebarLoginPrompt: '[data-testid="sidebar-login-prompt"]',
+    codeBlock: '.markdown-content pre code',
+    codeBlockHeader: '.code-block-header',
+    copyCodeButton: '.copy-code-btn',
+    previewCodeButton: '.preview-code-btn',
+    htmlPreviewDialog: '[data-testid="html-preview-dialog"]',
+    latexFormula: '.katex',
+    markdownTable: '.markdown-content table',
+    thinkingBlock: '[data-testid="thinking-block"]',
+    thinkingBlockToggle: '[data-testid="thinking-block-toggle"]',
+    thinkingBlockContent: '[data-testid="thinking-block-content"]',
   };
 
   async waitForPageLoad(): Promise<void> {
@@ -322,5 +332,62 @@ export class ChatPage {
     const html = this.page.locator('html');
     const classList = await html.getAttribute('class');
     return classList?.includes('dark') || false;
+  }
+
+  async hasCodeBlockWithLanguage(language: string): Promise<boolean> {
+    const codeBlocks = await this.page.locator(this.selectors.codeBlock).all();
+    for (const block of codeBlocks) {
+      const classList = await block.getAttribute('class');
+      if (classList?.includes(`language-${language}`)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async clickCopyButtonForCodeBlock(index: number = 0): Promise<void> {
+    const copyButtons = await this.page.locator(this.selectors.copyCodeButton).all();
+    await copyButtons[index].click();
+  }
+
+  async clickPreviewButtonForCodeBlock(index: number = 0): Promise<void> {
+    const previewButtons = await this.page.locator(this.selectors.previewCodeButton).all();
+    await previewButtons[index].click();
+    await this.page.locator(this.selectors.htmlPreviewDialog).waitFor({ state: 'visible' });
+  }
+
+  async closeHtmlPreviewDialog(): Promise<void> {
+    await this.page.keyboard.press('Escape');
+    await this.page.locator(this.selectors.htmlPreviewDialog).waitFor({ state: 'hidden' });
+  }
+
+  async hasLatexFormula(): Promise<boolean> {
+    const count = await this.page.locator(this.selectors.latexFormula).count();
+    return count > 0;
+  }
+
+  async hasMarkdownTable(): Promise<boolean> {
+    return await this.page.locator(this.selectors.markdownTable).isVisible();
+  }
+
+  async getTableCellText(row: number, col: number): Promise<string> {
+    const cell = this.page
+      .locator(`${this.selectors.markdownTable} tr`)
+      .nth(row)
+      .locator('th, td')
+      .nth(col);
+    return (await cell.textContent()) || '';
+  }
+
+  async hasThinkingBlock(): Promise<boolean> {
+    return await this.page.locator(this.selectors.thinkingBlock).isVisible();
+  }
+
+  async toggleThinkingBlock(): Promise<void> {
+    await this.page.locator(this.selectors.thinkingBlockToggle).click();
+  }
+
+  async isThinkingBlockExpanded(): Promise<boolean> {
+    return await this.page.locator(this.selectors.thinkingBlockContent).isVisible();
   }
 }

@@ -19,25 +19,36 @@ Chat interface enables real-time streaming conversations with AI models, support
 - ✅ Auto-scroll with disable setting
 - ✅ Generation parameters from settings applied to API
 - ✅ System message support
-- ❌ Missing: markdown rendering, syntax highlighting, token stats, message actions (copy/edit/delete), reasoning blocks
+- ✅ Markdown rendering (GFM, tables, strikethrough, task lists)
+- ✅ Syntax highlighting (highlight.js, 25+ languages)
+- ✅ LaTeX/KaTeX math rendering (inline and block)
+- ✅ Code block enhancements (language badge, copy button, HTML preview)
+- ✅ Reasoning/thinking blocks (collapsible, auto-expand setting)
+- ✅ Auto-grow textarea with Shift+Enter for newlines
+- ❌ Missing: token stats, message actions (copy/edit/delete)
 
 ---
 
 ## User Stories
 
-- 🔄 **As a user**, I can send text messages to the AI so that I can have conversations
+- ✅ **As a user**, I can send text messages to the AI so that I can have conversations
   - ✅ Type message in textarea
-  - ❌ Press Enter to send (Shift+Enter for newline) - _Only Enter works, no Shift+Enter_
+  - ✅ Press Enter to send (Shift+Enter for newline)
   - ✅ See message immediately in chat history
   - ❌ Send with file attachments
 
-- 🔄 **As a user**, I can see the AI's response stream in real-time so that I get immediate feedback
+- ✅ **As a user**, I can see the AI's response stream in real-time so that I get immediate feedback
   - ✅ See tokens appear in real-time
-  - ❌ View reasoning/thinking content separately (collapsible)
+  - ✅ View reasoning/thinking content separately (collapsible)
   - ❌ See generation progress (tokens, speed)
   - ✅ Stop generation mid-stream (saves partial)
 
-- ❌ **As a user**, I can see formatted content (markdown, code, math) so that technical content is readable
+- ✅ **As a user**, I can see formatted content (markdown, code, math) so that technical content is readable
+  - ✅ GFM markdown (tables, strikethrough, task lists)
+  - ✅ Syntax highlighting with language badge
+  - ✅ LaTeX/KaTeX math rendering
+  - ✅ Code block copy button
+  - ✅ HTML code preview dialog
 
 - 🔄 **As a user**, I can copy, edit, regenerate, and delete messages so that I can manage my conversation
   - ❌ Copy message text
@@ -47,7 +58,10 @@ Chat interface enables real-time streaming conversations with AI models, support
   - ❌ Delete individual messages
   - ❌ Continue generation (extend response)
 
-- ❌ **As a user**, I can see reasoning/thinking content separately so that I understand the AI's thought process
+- ✅ **As a user**, I can see reasoning/thinking content separately so that I understand the AI's thought process
+  - ✅ Collapsible thinking block with chevron toggle
+  - ✅ "Thinking..." label during streaming, "Reasoning" when complete
+  - ✅ `showThoughtInProgress` setting to control auto-expand
 
 - ✅ **As a user**, the chat auto-scrolls during streaming so that I always see the latest content
   - ✅ Auto-scroll during generation
@@ -69,12 +83,17 @@ Chat interface enables real-time streaming conversations with AI models, support
 
 ### Message Sending
 
+**Status**: ✅ Implemented (2026-01-13)
+
 **Behavior**: User types in textarea, presses Enter → message sent to API
-- Textarea auto-grows (max 10 rows desktop, 5 rows mobile)
+- Textarea auto-grows (max 200px height)
 - Send button enabled only when text non-empty
 - Message appears immediately in chat history
 - Focus returns to textarea after send
 - Shift+Enter creates newline (Enter sends)
+- Keyboard hint shown: "Shift + Enter for new line"
+
+**Implementation**: `src/components/chat/InputArea.tsx`
 
 **Edge Cases**:
 - Empty message → Send button disabled
@@ -95,12 +114,22 @@ Chat interface enables real-time streaming conversations with AI models, support
 
 ### Content Rendering
 
+**Status**: ✅ Implemented (2026-01-13)
+
 **Behavior**: Markdown content rendered with enhancements
-- **Markdown**: GFM support (tables, strikethrough, task lists)
+- **Markdown**: GFM support (tables, strikethrough, task lists) via remark-gfm
 - **Math**: LaTeX inline (`$x^2$`) and block (`$$\sum$$`) via KaTeX
-- **Code**: Syntax highlighting with language badge + copy button
+- **Code**: Syntax highlighting with language badge + copy button via highlight.js
 - **Links**: Clickable, open in new tab
-- **Incremental**: Stable blocks cached, only last block re-renders during streaming
+- **HTML Preview**: Preview button on HTML code blocks opens sandboxed iframe dialog
+- ⏸️ **Incremental**: Stable blocks cached, only last block re-renders during streaming (deferred)
+
+**Implementation Files**:
+- `src/components/markdown/MarkdownContent.tsx` - Main markdown rendering component
+- `src/components/markdown/CodePreviewDialog.tsx` - HTML preview dialog
+- `src/lib/markdown/processor.ts` - Unified remark/rehype pipeline
+- `src/lib/markdown/enhance-code-blocks.ts` - Custom rehype plugin for code enhancements
+- `src/lib/markdown/latex-protection.ts` - LaTeX preprocessing for various syntaxes
 
 **Edge Cases**:
 - Malformed markdown → Render as plain text
@@ -135,11 +164,18 @@ Chat interface enables real-time streaming conversations with AI models, support
 
 ### Thinking Block
 
+**Status**: ✅ Implemented (2026-01-13)
+
 **Behavior**: Reasoning content displayed separately from main content
-- Shows as collapsible block with brain icon
-- Header: "Reasoning..." (streaming) or "Reasoning" (complete)
+- Shows as collapsible block with chevron icon
+- Header: "Thinking..." (streaming) or "Reasoning" (complete)
 - Auto-collapses when main content arrives (if setting enabled)
 - Initial state: expanded if `showThoughtInProgress` enabled
+
+**Implementation Files**:
+- `src/components/markdown/ThinkingBlock.tsx` - Collapsible reasoning display
+- `src/hooks/useChat.ts` - Handles `reasoning_content` in streaming response
+- `src/components/settings/DisplayTab.tsx` - `showThoughtInProgress` toggle
 
 ### Statistics Display
 
@@ -193,13 +229,16 @@ Chat interface enables real-time streaming conversations with AI models, support
 - **AND** partial response is saved to database
 - **AND** send button re-enabled
 
-### Scenario: Markdown and code rendering
+### Scenario: Markdown and code rendering ✅
 
 - **GIVEN** assistant message contains markdown and code
 - **WHEN** content finishes streaming
 - **THEN** markdown is rendered with proper formatting
 - **AND** code blocks show syntax highlighting
 - **AND** copy button appears on code blocks
+- **AND** HTML code blocks show preview button
+
+**E2E Coverage**: `e2e/markdown-rendering.spec.ts`
 
 ### Scenario: Auto-scroll behavior
 
@@ -228,14 +267,16 @@ Chat interface enables real-time streaming conversations with AI models, support
 - **THEN** message content updates
 - **AND** all assistant responses are preserved (no regeneration)
 
-### Scenario: Thinking block display
+### Scenario: Thinking block display ✅
 
 - **GIVEN** model response includes reasoning_content
 - **WHEN** reasoning starts streaming
-- **THEN** collapsible "Reasoning..." block appears
+- **THEN** collapsible "Thinking..." block appears
 - **WHEN** regular content starts arriving
 - **THEN** thinking block auto-collapses (if setting enabled)
 - **AND** user can click to expand/collapse thinking block
+
+**E2E Coverage**: `e2e/markdown-rendering.spec.ts` (settings toggle tests)
 
 ### Scenario: Handle context exceeded error
 
@@ -308,28 +349,33 @@ data: [DONE]
 
 See `$webui-folder/src/lib/services/chat.ts` for full SSE parsing implementation.
 
-### Markdown Rendering Pipeline
+### Markdown Rendering Pipeline ✅
+
+**Status**: ✅ Implemented (2026-01-13)
 
 ```
 Input (markdown string)
+  → preprocessLaTeX (latex-protection.ts)
   → remark parse
   → remarkGfm (tables, strikethrough)
   → remarkMath ($inline$, $$block$$)
   → remarkBreaks (newlines → <br>)
   → remarkRehype (mdast → hast)
   → rehypeKatex (math rendering)
-  → rehypeHighlight (syntax highlight)
-  → rehypeEnhanceCodeBlocks (copy buttons, language badges)
+  → rehypeHighlight (syntax highlight, 25+ languages)
+  → rehypeEnhanceCodeBlocks (copy buttons, language badges, HTML preview)
   → rehypeStringify (HTML output)
 ```
 
-**Incremental Rendering**:
+**Implementation**: `src/lib/markdown/processor.ts`
+
+**Incremental Rendering** (⏸️ deferred):
 - Split content into blocks (paragraphs, code blocks, etc.)
 - Cache rendered HTML for stable blocks (blocks before last)
 - Re-render only last block during streaming
 - Append new blocks as content grows
 
-See `$webui-folder/src/lib/components/app/misc/markdown/` for remark/rehype pipeline.
+See `$webui-folder/src/lib/components/app/misc/markdown/` for reference remark/rehype pipeline.
 
 ### Auto-Scroll Pattern
 
@@ -382,17 +428,22 @@ See `$webui-folder/src/lib/components/app/chat/ChatMessages/ChatMessages.svelte`
 - Statistics (if enabled)
 - Action buttons (copy, edit, regenerate, delete)
 
-### Code Block Enhancements
+### Code Block Enhancements ✅
 - Language badge (top-left corner)
 - Copy button (top-right corner)
-- HTML preview button (if content is HTML)
-- Syntax highlighting via highlight.js
+- HTML preview button (if content is HTML) - opens sandboxed iframe dialog
+- Syntax highlighting via highlight.js (25+ languages)
 
-### Input Form
-- Auto-growing textarea (max 10 rows)
-- Attachment button
+**Implementation**: `src/lib/markdown/enhance-code-blocks.ts`
+
+### Input Form ✅
+- Auto-growing textarea (max 200px height)
+- Shift+Enter for newlines, Enter to send
 - Model selector (if multi-model mode)
 - Send button (disabled when empty) / Stop button (when streaming)
+- ⏸️ Attachment button (deferred)
+
+**Implementation**: `src/components/chat/InputArea.tsx`
 
 ---
 
@@ -449,4 +500,4 @@ See `$webui-folder/src/lib/components/app/chat/ChatMessages/ChatMessages.svelte`
 
 ---
 
-_Updated: Revised for functional focus, reduced code ratio_
+_Updated: 2026-01-13 - Markdown rendering, syntax highlighting, KaTeX, thinking blocks implemented_

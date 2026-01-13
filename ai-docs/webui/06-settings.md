@@ -38,7 +38,7 @@ Settings system provides configuration for generation parameters, UI behavior, t
 - ⏸️ API key field (for --api-key mode)
 - ⏸️ Advanced samplers (dynatemp, XTC, DRY)
 - ⏸️ Custom parameters JSON field
-- ⏸️ Additional display options (showMessageStats, keepStatsVisible, renderUserContentAsMarkdown)
+- ⏸️ Additional display options (showMessageStats, keepStatsVisible)
 
 ---
 
@@ -113,14 +113,14 @@ Settings system provides configuration for generation parameters, UI behavior, t
 - `enableContinueGeneration`: boolean (experimental, default: false)
 
 ### 2. Display
-- `showMessageStats`: boolean (default: true)
-- `showThoughtInProgress`: boolean (default: false)
-- `keepStatsVisible`: boolean (default: false)
-- `renderUserContentAsMarkdown`: boolean (default: false)
-- `disableAutoScroll`: boolean (default: false)
-- `alwaysShowSidebarOnDesktop`: boolean (default: false)
-- `autoShowSidebarOnNewChat`: boolean (default: true)
-- `autoMicOnEmpty`: boolean (experimental, default: false)
+- `showMessageStats`: boolean (default: true) ⏸️ _deferred_
+- `showThoughtInProgress`: boolean (default: true) ✅ _implemented 2026-01-13_
+- `keepStatsVisible`: boolean (default: false) ⏸️ _deferred_
+- `renderUserContentAsMarkdown`: boolean (default: false) ✅ _implemented 2026-01-13_
+- `disableAutoScroll`: boolean (default: false) ✅
+- `alwaysShowSidebarOnDesktop`: boolean (default: true) ✅
+- `autoShowSidebarOnNewChat`: boolean (default: true) ✅
+- `autoMicOnEmpty`: boolean (experimental, default: false) ⏸️ _deferred_
 
 ### 3. Sampling
 - `temperature`: number (default: 0.8, range: 0.0-2.0)
@@ -189,6 +189,8 @@ interface Settings {
     disableAutoScroll: boolean;
     alwaysShowSidebarOnDesktop: boolean;
     autoShowSidebarOnNewChat: boolean;
+    showThoughtInProgress: boolean;      // ✅ added 2026-01-13
+    renderUserContentAsMarkdown: boolean; // ✅ added 2026-01-13
   };
 }
 ```
@@ -200,10 +202,11 @@ interface Settings {
 - Theme preference also synced to localStorage via ThemeProvider (key: `ui-theme`)
 
 **Reference Files**:
-- `src/lib/settings-defaults.ts`: DEFAULT_SETTINGS, VALIDATION_RANGES
+- `src/lib/settings-defaults.ts`: DEFAULT_SETTINGS, VALIDATION_RANGES, Settings interfaces
 - `src/context/SettingsContext.tsx`: SettingsProvider with theme integration
 - `src/hooks/useSettings.ts`: useSettings hook with persistence
 - `src/db/schema.ts`: userSettings table definition
+- `src/components/settings/DisplayTab.tsx`: Display settings UI (5 toggles)
 
 ---
 
@@ -403,4 +406,8 @@ See `$webui-folder/src/lib/stores/settings.svelte.ts` for full implementation.
 
 ---
 
-_Updated: Revised for functional focus, reduced code ratio_
+**Update 2026-01-13**: Added `showThoughtInProgress` and `renderUserContentAsMarkdown` display settings for markdown rendering feature.
+
+---
+
+_Updated: 2026-01-13 - Display settings expanded for markdown rendering_
